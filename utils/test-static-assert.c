@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2012-2014, The CryptoNote developers, The Bytecoin developers
 //
 // This file is part of Bytecoin.
 //
@@ -15,12 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+#include <assert.h>
 
-// CROAT
-namespace CryptoNote
-{
-  const static boost::uuids::uuid BYTECOIN_NETWORK = { {  0xB1, 0x1E, 0x59, 0x99, 0xCB, 0xCE, 0xFE, 0x91, 0x76, 0xF5, 0x51, 0x0A, 0xBF, 0x30, 0xC8, 0x85  } };
-
+static_assert(1, "FAIL");
+int main(int argc, char *argv[]) {
+	return 0;
 }
-
