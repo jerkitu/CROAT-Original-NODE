@@ -342,8 +342,8 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
         std::cout << "Configuration error: Cannot open configuration file" << std::endl;
         std::cout << "" << std::endl;
         std::cout << "Usage:" << std::endl;
-        std::cout << "Windows:   croatd.exe --config-file configs/dashcoin.conf" << std::endl;
-        std::cout << "Linux/Mac:   ./croatd --config-file configs/dashcoin.conf" << std::endl;
+        std::cout << "Windows:   croatd.exe --config-file configs/croat.conf" << std::endl;
+        std::cout << "Linux/Mac:   ./croatd --config-file configs/croat.conf" << std::endl;
         return false;
       }
       po::notify(vm);
@@ -373,14 +373,43 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
     // configure logging
     logManager.configure(buildLoggerConfiguration(cfgLogLevel, cfgLogFile));
 
-    logger(INFO) << CryptoNote::CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG;
+    logger(INFO) << CryptoNote::CRYPTONOTE_NAME << " Daemon v" << PROJECT_VERSION_LONG;
 
     if (command_line_preprocessor(vm, logger)) {
       return 0;
     }
 
-    logger(INFO) << "Module folder: " << argv[0];
+    #ifdef _WIN32   
+    
 
+    std::cout <<
+    "                                                \n"
+    "              WELCOME TO CROAT!!              \n"
+    "                                                \n"    
+    "     Daemon developed by CROAT Community!       \n"
+    "                                                \n"    
+    "            .-( www.croatcoin.info )-.          \n"    
+    "                                                \n" << ENDL;
+    
+    #else
+
+    std::cout <<	
+    "                                            \n"
+    "  ██████╗██████╗  ██████╗  █████╗ ████████╗ \n"
+    " ██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝ \n"
+    " ██║     ██████╔╝██║   ██║███████║   ██║    \n"
+    " ██║     ██╔══██╗██║   ██║██╔══██║   ██║    \n"
+    " ╚██████╗██║  ██║╚██████╔╝██║  ██║   ██║    \n"
+    "  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    \n"
+    "                                            \n"       
+    "   Daemon developed by CROAT Community!     \n"
+    "         .-( www.croatcoin.info )-.         \n"        
+	"                                            \n" << ENDL;
+        
+    #endif
+
+    logger(INFO) << "Module folder: " << argv[0];
+    
     bool testnet_mode = command_line::get_arg(vm, arg_testnet_on);
     if (testnet_mode) {
       logger(INFO) << "Starting in testnet mode!";
@@ -454,9 +483,9 @@ if (command_line::has_arg(vm, arg_CHECKPOINT) && checkpoint_args.size() != 0)
 }
 else
 {
-  if (command_line::get_arg(vm, arg_CRYPTONOTE_NAME) == "bytecoin") {
+  //if (command_line::get_arg(vm, arg_CRYPTONOTE_NAME) == "croat") {
       checkpoint_input = CryptoNote::CHECKPOINTS;
-  }
+  //}
 }
 for (const auto& cp : checkpoint_input) {
       checkpoints.add_checkpoint(cp.height, cp.blockId);
