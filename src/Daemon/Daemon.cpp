@@ -57,6 +57,7 @@ namespace
   const command_line::arg_descriptor<std::string> arg_log_file    = {"log-file", "", ""};
   const command_line::arg_descriptor<int>         arg_log_level   = {"log-level", "", 2}; // info level
   const command_line::arg_descriptor<bool>        arg_console     = {"no-console", "Disable daemon console commands"};
+  const command_line::arg_descriptor<bool> arg_restricted_rpc = {"restricted-rpc", "Restrict RPC to view only commands to prevent abuse"};  
   const command_line::arg_descriptor<bool>        arg_print_genesis_tx = { "print-genesis-tx", "Prints genesis' block tx hex to insert it to config and exits" };
   const command_line::arg_descriptor<std::vector<std::string>> arg_genesis_block_reward_address = { "genesis-block-reward-address", "" };
   const command_line::arg_descriptor<bool>        arg_enable_blockchain_indexes = { "enable-blockchain-indexes", "Enable blockchain indexes", false };
@@ -273,6 +274,8 @@ int main(int argc, char* argv[])
     command_line::add_arg(desc_cmd_sett, arg_log_file);
     command_line::add_arg(desc_cmd_sett, arg_log_level);
     command_line::add_arg(desc_cmd_sett, arg_console);
+	command_line::add_arg(desc_cmd_sett, arg_restricted_rpc);
+    
     command_line::add_arg(desc_cmd_sett, arg_testnet_on);
     command_line::add_arg(desc_cmd_sett, arg_GENESIS_COINBASE_TX_HEX);
     command_line::add_arg(desc_cmd_sett, arg_CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX);
@@ -298,10 +301,11 @@ int main(int argc, char* argv[])
     command_line::add_arg(desc_cmd_sett, arg_CRYPTONOTE_COIN_VERSION);
     command_line::add_arg(desc_cmd_sett, arg_KILL_HEIGHT);
     command_line::add_arg(desc_cmd_sett, arg_MANDATORY_TRANSACTION);
-command_line::add_arg(desc_cmd_sett, arg_enable_cors);
-command_line::add_arg(desc_cmd_sett, arg_enable_blockchain_indexes);
-command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
-  command_line::add_arg(desc_cmd_sett, arg_genesis_block_reward_address);
+    
+    command_line::add_arg(desc_cmd_sett, arg_enable_cors);
+    command_line::add_arg(desc_cmd_sett, arg_enable_blockchain_indexes);
+    command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
+    command_line::add_arg(desc_cmd_sett, arg_genesis_block_reward_address);
 
     RpcServerConfig::initOptions(desc_cmd_sett);
     CoreConfig::initOptions(desc_cmd_sett);
@@ -318,7 +322,7 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
 
       if (command_line::get_arg(vm, command_line::arg_help))
       {
-        std::cout << CryptoNote::CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG << ENDL << ENDL;
+        std::cout << CryptoNote::CRYPTONOTE_NAME << " Daemon v" << PROJECT_VERSION_LONG << ENDL << ENDL;
         std::cout << desc_options << std::endl;
         return false;
       }
@@ -384,7 +388,7 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
 
     std::cout <<
     "                                                \n"
-    "              WELCOME TO CROAT!!              \n"
+    "              WELCOME TO CROAT!!                \n"
     "                                                \n"    
     "     Daemon developed by CROAT Community!       \n"
     "                                                \n"    
@@ -561,7 +565,8 @@ for (const auto& cp : checkpoint_input) {
 
     logger(INFO) << "Starting core rpc server on address " << rpcConfig.getBindAddress();
     rpcServer.start(rpcConfig.bindIp, rpcConfig.bindPort);
-rpcServer.enableCors(command_line::get_arg(vm, arg_enable_cors));
+    rpcServer.enableCors(command_line::get_arg(vm, arg_enable_cors));
+    rpcServer.restrictRPC(command_line::get_arg(vm, arg_restricted_rpc));    
     logger(INFO) << "Core rpc server started ok";
 
     Tools::SignalHandler::install([&dch, &p2psrv] {
