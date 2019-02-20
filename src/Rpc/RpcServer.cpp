@@ -137,11 +137,11 @@ bool RpcServer::processJsonRpcRequest(const HttpRequest& request, HttpResponse& 
 
   using namespace JsonRpc;
 
-response.addHeader("Content-Type", "application/json");
+  response.addHeader("Content-Type", "application/json");
 
-if (m_cors_enabled) {
-  response.addHeader("Access-Control-Allow-Origin", "*");
-}
+    if (m_cors_enabled) {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+    }
 
   JsonRpcRequest jsonRequest;
   JsonRpcResponse jsonResponse;
@@ -152,6 +152,7 @@ if (m_cors_enabled) {
     jsonResponse.setId(jsonRequest.getId()); // copy id
 
     static std::unordered_map<std::string, RpcServer::RpcHandler<JsonMemberMethod>> jsonRpcHandlers = {
+        
       { "f_blocks_list_json", { makeMemberMethod(&RpcServer::f_on_blocks_list_json), false } },
       { "f_block_json", { makeMemberMethod(&RpcServer::f_on_block_json), false } },
       { "f_transaction_json", { makeMemberMethod(&RpcServer::f_on_transaction_json), false } },
