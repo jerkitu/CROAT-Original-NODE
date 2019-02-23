@@ -86,6 +86,7 @@ namespace
   const command_line::arg_descriptor<size_t>    arg_CRYPTONOTE_COIN_VERSION  = {"CRYPTONOTE_COIN_VERSION", "size_t", 0};
   const command_line::arg_descriptor<uint32_t>    arg_KILL_HEIGHT  = {"KILL_HEIGHT", "uint32_t", 0};
   const command_line::arg_descriptor<uint32_t>    arg_MANDATORY_TRANSACTION  = {"MANDATORY_TRANSACTION", "uint32_t", CryptoNote::parameters::MANDATORY_TRANSACTION};
+  const command_line::arg_descriptor<std::string> arg_set_fee_address = { "fee-address", "Sets fee address for light wallets to the daemon's RPC responses.", "" };
   const command_line::arg_descriptor<bool>        arg_testnet_on  = {"testnet", "Used to deploy test nets. Checkpoints and hardcoded seeds are ignored, "
     "network id is changed. Use it with --data-dir flag. The wallet must be launched with --testnet flag.", false};
 }
@@ -275,6 +276,7 @@ int main(int argc, char* argv[])
     command_line::add_arg(desc_cmd_sett, arg_log_level);
     command_line::add_arg(desc_cmd_sett, arg_console);
 	command_line::add_arg(desc_cmd_sett, arg_restricted_rpc);
+	command_line::add_arg(desc_cmd_sett, arg_set_fee_address);
     
     command_line::add_arg(desc_cmd_sett, arg_testnet_on);
     command_line::add_arg(desc_cmd_sett, arg_GENESIS_COINBASE_TX_HEX);
@@ -567,6 +569,7 @@ for (const auto& cp : checkpoint_input) {
     rpcServer.start(rpcConfig.bindIp, rpcConfig.bindPort);
     rpcServer.enableCors(command_line::get_arg(vm, arg_enable_cors));
     rpcServer.restrictRPC(command_line::get_arg(vm, arg_restricted_rpc));    
+	rpcServer.setFeeAddress(command_line::get_arg(vm, arg_set_fee_address));
     logger(INFO) << "Core rpc server started ok";
 
     Tools::SignalHandler::install([&dch, &p2psrv] {
