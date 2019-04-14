@@ -174,6 +174,14 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     logger(Logging::DEBUGGING) << "Remote top block height: " << hshd.current_height << ", id: " << hshd.top_id;
     //let the socket to send response to handshake, but request callback, to let send request data after response
     logger(Logging::TRACE) << context << "requesting synchronization";
+	
+	//if we are more than 15000 blocks (about 10 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
+	//download up to date copy of the blockchain if needed
+	if (diff >= 15000) {
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Remote node height too many days ahead of this node height, either it is in another blockchain or you need to download an updated copy of the blockchain";
+      context.m_state = CryptoNoteConnectionContext::state_shutdown;
+      return false;
+    }
     context.m_state = CryptoNoteConnectionContext::state_sync_required;
   }
 
@@ -488,7 +496,7 @@ bool CryptoNoteProtocolHandler::on_idle() {
 int CryptoNoteProtocolHandler::handle_request_chain(int command, NOTIFY_REQUEST_CHAIN::request& arg, CryptoNoteConnectionContext& context) {
   logger(Logging::TRACE) << context << "NOTIFY_REQUEST_CHAIN: m_block_ids.size()=" << arg.block_ids.size();
 
-  if ((context.msg2006 >= 5) && (context.msg2007 >= 5)) {
+  if ((context.msg2006 >= 3) && (context.msg2007 >= 3)) {
     logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Failed to handle NOTIFY_REQUEST_CHAIN. 2006-2007 loop detected";
     context.m_state = CryptoNoteConnectionContext::state_shutdown;
     return 1;
@@ -588,7 +596,7 @@ int CryptoNoteProtocolHandler::handle_response_chain_entry(int command, NOTIFY_R
   logger(Logging::TRACE) << context << "NOTIFY_RESPONSE_CHAIN_ENTRY: m_block_ids.size()=" << arg.m_block_ids.size()
     << ", m_start_height=" << arg.start_height << ", m_total_height=" << arg.total_height;
 
-  if ((context.msg2006 >= 5) && (context.msg2007 >= 5)) {
+  if ((context.msg2006 >= 3) && (context.msg2007 >= 3)) {
     logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Failed to handle NOTIFY_RESPONSE_CHAIN_ENTRY. 2006-2007 loop detected";
     context.m_state = CryptoNoteConnectionContext::state_shutdown;
     return 1;
