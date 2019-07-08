@@ -464,9 +464,7 @@ bool get_block_hash(const Block& b, Hash& res) {
     return false;
   }
 
-  // The header of block version 1 differs from headers of blocks starting from v.2
-  //if (BLOCK_MAJOR_VERSION_2 <= b.majorVersion) {
-    if (BLOCK_MAJOR_VERSION_2 == b.majorVersion || BLOCK_MAJOR_VERSION_3 == b.majorVersion) {
+  if (BLOCK_MAJOR_VERSION_2 <= b.majorVersion) {
     BinaryArray parent_blob;
     auto serializer = makeParentBlockSerializer(b, true, false);
     if (!toBinaryArray(serializer, parent_blob))
@@ -499,8 +497,7 @@ bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
     if (!get_block_hashing_blob(b, bd)) {
       return false;
     }
-  //} else if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
-    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_2 || b.majorVersion == BLOCK_MAJOR_VERSION_3) {      
+  } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
     if (!get_parent_block_hashing_blob(b, bd)) {
       return false;
     }

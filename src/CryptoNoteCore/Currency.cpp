@@ -72,13 +72,13 @@ bool Currency::init() {
   }
 
   if (isTestnet()) {
-		m_upgradeHeightV2 = 1;
-		m_upgradeHeightV3 = 2;
-        m_blocksFileName = "testnet_" + m_blocksFileName;
-        m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
-        m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
-        m_txPoolFileName = "testnet_" + m_txPoolFileName;
-        m_blockchinIndicesFileName = "testnet_" + m_blockchinIndicesFileName;
+    m_upgradeHeightV2 = 0;
+    m_upgradeHeightV3 = static_cast<uint32_t>(-1);
+    m_blocksFileName = "testnet_" + m_blocksFileName;
+    m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
+    m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
+    m_txPoolFileName = "testnet_" + m_txPoolFileName;
+    m_blockchinIndicesFileName = "testnet_" + m_blockchinIndicesFileName;
   }
 
   return true;
@@ -449,8 +449,7 @@ difficulty_type Currency::nextDifficulty(std::vector<uint64_t> timestamps,
 
 bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
   Crypto::Hash& proofOfWork) const {
-//  if (BLOCK_MAJOR_VERSION_1 != block.majorVersion) {
-  if (BLOCK_MAJOR_VERSION_2 == block.majorVersion || BLOCK_MAJOR_VERSION_3 == block.majorVersion) {    
+  if (BLOCK_MAJOR_VERSION_1 != block.majorVersion) {
     return false;
   }
 
