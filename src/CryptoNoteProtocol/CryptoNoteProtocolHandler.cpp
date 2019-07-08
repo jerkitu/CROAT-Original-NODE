@@ -175,10 +175,10 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     //let the socket to send response to handshake, but request callback, to let send request data after response
     logger(Logging::TRACE) << context << "requesting synchronization";
 	
-	//if we are more than 15000 blocks (about 10 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
+	//if we are more than 30000 blocks (about 10 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
 	//download up to date copy of the blockchain if needed
-	if (diff >= 15000) {
-      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Remote node height too many days ahead of this node height, either it is in another blockchain or you need to download an updated copy of the blockchain";
+	if (diff >= 30000) {
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD!. You need to download an updated copy of the Blockchain";
       context.m_state = CryptoNoteConnectionContext::state_shutdown;
       return false;
     }
