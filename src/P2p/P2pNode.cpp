@@ -31,6 +31,7 @@
 #include "Serialization/BinaryInputStreamSerializer.h"
 #include "Serialization/BinaryOutputStreamSerializer.h"
 
+#include "version.h"
 #include "LevinProtocol.h"
 #include "P2pConnectionProxy.h"
 #include "P2pContext.h"
@@ -405,7 +406,7 @@ bool P2pNode::fetchPeerList(ContextPtr connection) {
     if (response.node_data.network_id != request.node_data.network_id) {
       logger(ERROR) << *connection << "COMMAND_HANDSHAKE failed, wrong network: " << response.node_data.network_id;
       return false;
-    }
+    }   
 
     return handleRemotePeerList(response.local_peerlist, response.node_data.local_time);
   } catch (std::exception& e) {
@@ -452,6 +453,7 @@ basic_node_data P2pNode::getNodeData() const {
   basic_node_data nodeData;
   nodeData.network_id = m_cfg.getNetworkId();
   nodeData.version = P2PProtocolVersion::CURRENT;
+  nodeData.node_version = PROJECT_VERSION;  
   nodeData.local_time = time(nullptr);
   nodeData.peer_id = m_myPeerId;
 

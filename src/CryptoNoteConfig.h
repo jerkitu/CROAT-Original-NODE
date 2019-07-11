@@ -127,6 +127,16 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
 const char* const SEED_NODES[] = { 
   "nodes.croatcoin.info:46347",     // CROATCoin.info Random Nodes
+  "node-02.croatpirineus.cat:46347",     // Node-02 CROATPirineus.cat  
+};
+
+const char* const TRUSTED_NODES[] = { 
+  "173.249.32.180",                 // Node-01 de CROAT Pirineus
+  "80.241.213.210",                 // Node-02 de CROAT Pirineus
+  "90.74.0.202",                    // Node del Joan
+  "199.247.29.17",                  // Node de POOL.CAT 
+  "173.199.71.78",                  // Node-01 CROAT.communitiy
+  "104.238.167.37",                 // Node-02 CROAT.communitiy
 };
 
 struct CheckpointData {

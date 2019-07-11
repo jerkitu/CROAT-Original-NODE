@@ -62,6 +62,7 @@ namespace CryptoNote
   {
     uuid network_id;
     uint8_t version;
+    std::string node_version;    
     uint64_t local_time;
     uint32_t my_port;
     PeerIdType peer_id;
@@ -72,6 +73,7 @@ namespace CryptoNote
         version = 0;
       }
       KV_MEMBER(version)
+      KV_MEMBER(node_version)      
       KV_MEMBER(peer_id)
       KV_MEMBER(local_time)
       KV_MEMBER(my_port)
@@ -230,6 +232,7 @@ namespace CryptoNote
     struct response
     {
       std::string version;
+      std::string node_version;      
       std::string os_version;
       uint64_t connections_count;
       uint64_t incoming_connections_count;
@@ -237,6 +240,7 @@ namespace CryptoNote
 
       void serialize(ISerializer& s) {
         KV_MEMBER(version)
+        KV_MEMBER(node_version)        
         KV_MEMBER(os_version)
         KV_MEMBER(connections_count)
         KV_MEMBER(incoming_connections_count)

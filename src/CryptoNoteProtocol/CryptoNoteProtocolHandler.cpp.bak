@@ -190,8 +190,8 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
       
       if (std::find(std::begin(CryptoNote::TRUSTED_NODES), std::end(CryptoNote::TRUSTED_NODES), Common::ipAddressToString(context.m_remote_ip)) != std::end(CryptoNote::TRUSTED_NODES))
       {
-      logger(Logging::INFO, Logging::BRIGHT_BLUE) << "TRUSTED NODE DETECTED!!! [" << Common::ipAddressToString(context.m_remote_ip) << "] - Skip version check!!";      
-        version_errors = 0;  
+      //logger(Logging::DEBUGGING, Logging::BRIGHT_BLUE) << "INC - TRUSTED NODE DETECTED!!! [" << Common::ipAddressToString(context.m_remote_ip) << "] - Skip version check!!";  
+      version_errors = 0;  
       } 
 
         // Else Continue checking versions
@@ -212,6 +212,18 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     
     if (version_errors == 0)
     {
+
+    //Check height difference
+	//if we are more than 30000 blocks (about 20 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
+	if (diff >= 30000) {
+      std::cout << "\n";              
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD! You need to download an updated copy of the Blockchain!";
+      std::cout << "\n";            
+      context.m_state = CryptoNoteConnectionContext::state_shutdown;
+      return false;
+    }
+    
+    else {
     logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_YELLOW) << context <<
       "Sync data returned unknown top block: " << get_current_blockchain_height() << " -> " << hshd.current_height
       << " [" << std::abs(diff) << " blocks (" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days) "
@@ -220,20 +232,9 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     logger(Logging::DEBUGGING) << "Remote top block height: " << hshd.current_height << ", id: " << hshd.top_id;
     //let the socket to send response to handshake, but request callback, to let send request data after response
     logger(Logging::TRACE) << context << "requesting synchronization";
-    }
-    
-    // Continue 
-    
-    //Check height difference
-	//if we are more than 30000 blocks (about 20 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
-	//download up to date copy of the blockchain if needed
-	if (diff >= 30000) {
-      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD!. You need to download an updated copy of the Blockchain";
-      context.m_state = CryptoNoteConnectionContext::state_shutdown;
-      return false;
-    }
-    
     context.m_state = CryptoNoteConnectionContext::state_sync_required;
+    }
+    }
   }
 
   updateObservedHeight(hshd.current_height, context);
