@@ -461,13 +461,15 @@ bool writeAddressFile(const std::string& addressFilename, const std::string& add
 
 }
 
-std::string simple_wallet::get_commands_str() {
+std::string simple_wallet::get_commands_str() 
+{
   std::stringstream ss;
+  ss << "CROAT SimpleWallet v" << PROJECT_VERSION_LONG << ENDL;  
   ss <<
   "                                                \n"
   "################################################\n"  
   "#                                              #\n"    
-  "#             CROAT SIMPLEWALLET!!             #\n"
+  "#             CROAT SIMPLEWALLET               #\n"
   "#                                              #\n"    
   "#     Wallet developed by CROAT Community!     #\n"
   "#       .-( https://CROAT.community )-.        #\n"    
@@ -484,7 +486,8 @@ std::string simple_wallet::get_commands_str() {
 }
 
 bool simple_wallet::help(const std::vector<std::string> &args/* = std::vector<std::string>()*/) {
-  success_msg_writer() << get_commands_str();
+  //success_msg_writer() << get_commands_str();
+  std::cout << get_commands_str() << ENDL;  
   return true;
 }
 

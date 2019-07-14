@@ -107,7 +107,7 @@ const uint8_t  BLOCK_MINOR_VERSION_0                         =  0;
 const uint8_t  BLOCK_MINOR_VERSION_1                         =  1;
 
 const size_t   BLOCKS_IDS_SYNCHRONIZING_DEFAULT_COUNT        =  10000;  //by default, blocks ids count in synchronizing
-const size_t   BLOCKS_SYNCHRONIZING_DEFAULT_COUNT            =  200;    //by default, blocks count in blocks downloading
+const size_t   BLOCKS_SYNCHRONIZING_DEFAULT_COUNT            =  128;    //by default, blocks count in blocks downloading
 const size_t   COMMAND_RPC_GET_BLOCKS_FAST_MAX_COUNT         =  1000;
 
 const int      P2P_DEFAULT_PORT                              =  46347;
@@ -116,7 +116,7 @@ const int      RPC_DEFAULT_PORT                              =  46348;
 const size_t   P2P_LOCAL_WHITE_PEERLIST_LIMIT                =  1000;
 const size_t   P2P_LOCAL_GRAY_PEERLIST_LIMIT                 =  5000;
 
-const size_t   P2P_CONNECTION_MAX_WRITE_BUFFER_SIZE          = 16 * 1024 * 1024; // 16 MB
+const size_t   P2P_CONNECTION_MAX_WRITE_BUFFER_SIZE          = 64 * 1024 * 1024; // 64 MB
 const uint32_t P2P_DEFAULT_CONNECTIONS_COUNT                 = 8;
 const size_t   P2P_DEFAULT_WHITELIST_CONNECTIONS_PERCENT     = 70;
 const uint32_t P2P_DEFAULT_HANDSHAKE_INTERVAL                = 60;            // seconds
@@ -130,7 +130,12 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
 const char* const SEED_NODES[] = { 
   "nodes.croatcoin.info:46347",     // CROATCoin.info Random Nodes
-  "node-02.croatpirineus.cat:46347",     // Node-02 CROATPirineus.cat  
+  "173.249.32.180:46347",                 // Node-01 de CROAT Pirineus
+  "80.241.213.210:46347",                 // Node-02 de CROAT Pirineus
+  "90.74.0.202:46347",                    // Node de @JeRKiTu
+  "199.247.29.17:46347",                  // Node de POOL.CAT 
+  "173.199.71.78:46347",                  // Node-01 CROAT.communitiy
+  "104.238.167.37:46347",                 // Node-02 CROAT.communitiy
 };
 
 const char* const TRUSTED_NODES[] = { 
