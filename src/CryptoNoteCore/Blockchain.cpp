@@ -1074,10 +1074,10 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
     
     // Disable merged mining
     TransactionExtraMergeMiningTag mmTag;
-    if (getMergeMiningTagFromExtra(bei.bl.baseTransaction.extra, mmTag) && bei.bl.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_3) {
-      logger(ERROR, BRIGHT_RED) << "Merge mining tag was found in extra of miner transaction";
+    if ((getMergeMiningTagFromExtra(bei.bl.baseTransaction.extra, mmTag)) && (bei.height >= CryptoNote::parameters::KILL_MM_HEIGHT)) {
+      logger(ERROR, BRIGHT_RED) << "Merge mining tag was found in extra of miner transaction at block " << bei.height << " Disabled!!";
       return false;
-    }    
+    }
 
     // Always check PoW for alternative blocks
     m_is_in_checkpoint_zone = false;
@@ -1656,8 +1656,7 @@ bool Blockchain::checkBlockVersion(const Block& b, const Crypto::Hash& blockHash
 }
 
 bool Blockchain::checkParentBlockSize(const Block& b, const Crypto::Hash& blockHash) {
-  //if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
-    if (b.majorVersion == BLOCK_MAJOR_VERSION_2 || b.majorVersion == BLOCK_MAJOR_VERSION_3) {      
+  if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
     auto serializer = makeParentBlockSerializer(b, false, false);
     size_t parentBlockSize;
     if (!getObjectBinarySize(serializer, parentBlockSize)) {
@@ -1807,12 +1806,14 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
   }
   
   // Disable merged mining
+  uint32_t height = 0;
   TransactionExtraMergeMiningTag mmTag;
-  if (getMergeMiningTagFromExtra(blockData.baseTransaction.extra, mmTag) && blockData.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_3) {
-    logger(ERROR, BRIGHT_RED) << "Merge mining tag was found in extra of miner transaction";
-    return false;
-  }
-    
+  if (m_blockIndex.getBlockHeight(blockHash, height)) {  
+   if ((getMergeMiningTagFromExtra(blockData.baseTransaction.extra, mmTag)) && (height >= CryptoNote::parameters::KILL_MM_HEIGHT)) {
+       logger(ERROR, BRIGHT_RED) << "Merge mining tag was found in extra of miner transaction at block " << blockHash << " Disabled!!";
+     return false;
+   }
+  }   
 
   if (blockData.previousBlockHash != getTailId()) {
     logger(INFO, BRIGHT_WHITE) <<

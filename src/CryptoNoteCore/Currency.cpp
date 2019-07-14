@@ -449,8 +449,7 @@ difficulty_type Currency::nextDifficulty(std::vector<uint64_t> timestamps,
 
 bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
   Crypto::Hash& proofOfWork) const {
-//  if (BLOCK_MAJOR_VERSION_1 != block.majorVersion) {
-  if (BLOCK_MAJOR_VERSION_2 == block.majorVersion || BLOCK_MAJOR_VERSION_3 == block.majorVersion) {    
+  if (BLOCK_MAJOR_VERSION_1 != block.majorVersion) {   
     return false;
   }
 

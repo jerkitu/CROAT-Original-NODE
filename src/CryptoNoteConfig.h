@@ -92,6 +92,9 @@ const char     P2P_NET_DATA_FILENAME[]                       = "p2pstate.bin";
 const char     CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[]      = "blockchainindices.dat";
 const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010701ff0001d8cba1abb6e2fef4140288ea25298cf01cbf265202303707116c16290882a0a3f47c60f7edd36a5f813c21011ba0f0ca3932e752111d5a4d8d03337cb44399d7e991bbc6148d018b35fd0a26";
+
+const uint32_t KILL_MM_HEIGHT                                = 10; //Block height to start killing Merged Mining as child coin
+
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "croat";

@@ -87,7 +87,7 @@ namespace
   const command_line::arg_descriptor<size_t>      arg_DIFFICULTY_LAG  = {"DIFFICULTY_LAG", "uint64_t", CryptoNote::parameters::DIFFICULTY_LAG};
   const command_line::arg_descriptor<std::string> arg_CRYPTONOTE_NAME  = {"CRYPTONOTE_NAME", "Cryptonote name. Used for storage directory", ""};
   const command_line::arg_descriptor< std::vector<std::string> > arg_CHECKPOINT  = {"CHECKPOINT", "Checkpoints. Format: HEIGHT:HASH"};
-  const command_line::arg_descriptor<uint64_t>    arg_GENESIS_BLOCK_REWARD  = {"GENESIS_BLOCK_REWARD", "uint64_t", 0};
+  const command_line::arg_descriptor<uint64_t>    arg_GENESIS_BLOCK_REWARD  = {"GENESIS_BLOCK_REWARD", "uint64_t", CryptoNote::parameters::GENESIS_BLOCK_REWARD};
   const command_line::arg_descriptor<size_t>    arg_CRYPTONOTE_COIN_VERSION  = {"CRYPTONOTE_COIN_VERSION", "size_t", 0};
   const command_line::arg_descriptor<uint32_t>    arg_KILL_HEIGHT  = {"KILL_HEIGHT", "uint32_t", 0};
   const command_line::arg_descriptor<uint32_t>    arg_MANDATORY_TRANSACTION  = {"MANDATORY_TRANSACTION", "uint32_t", CryptoNote::parameters::MANDATORY_TRANSACTION};
@@ -453,7 +453,8 @@ int main(int argc, char* argv[])
     " ██║     ██╔══██╗██║   ██║██╔══██║   ██║    \n"
     " ╚██████╗██║  ██║╚██████╔╝██║  ██║   ██║    \n"
     "  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    \n"
-    "                                            \n"       
+    "         LA CRIPTOMONEDA CATALANA           \n"       
+    "                                            \n"           
     "   Daemon developed by CROAT Community!     \n"
     "     .-( https://CROAT.community )-.        \n"        
 	"                                            \n" << ENDL;
