@@ -25,10 +25,12 @@
 #include "Serialization/JsonInputValueSerializer.h"
 #include "Serialization/JsonOutputStreamSerializer.h"
 
+#include "Rpc/JsonRpc.h"
+
 namespace PaymentService {
 
-PaymentServiceJsonRpcServer::PaymentServiceJsonRpcServer(System::Dispatcher& sys, System::Event& stopEvent, WalletService& service, Logging::ILogger& loggerGroup) 
-  : JsonRpcServer(sys, stopEvent, loggerGroup)
+PaymentServiceJsonRpcServer::PaymentServiceJsonRpcServer(System::Dispatcher& sys, System::Event& stopEvent, WalletService& service, Logging::ILogger& loggerGroup, PaymentService::Configuration& config) 
+  : JsonRpcServer(sys, stopEvent, loggerGroup, config)
   , service(service)
   , logger(loggerGroup, "PaymentServiceJsonRpcServer")
 {
@@ -63,6 +65,23 @@ void PaymentServiceJsonRpcServer::processJsonRpcRequest(const Common::JsonValue&
       logger(Logging::WARNING) << "Field \"method\" is not found in json request: " << req;
       makeGenericErrorReponse(resp, "Invalid Request", -3600);
       return;
+    }
+    
+    if (!config.legacySecurity) {
+      std::string clientPassword;
+      if (!req.contains("password")) {
+        makeInvalidPasswordResponse(resp);
+        return;
+      }   
+      if (!req("password").isString()) {
+        makeInvalidPasswordResponse(resp);
+        return;
+      }
+      clientPassword = req("password").getString();
+      if (clientPassword != config.rpcPassword) {
+        makeInvalidPasswordResponse(resp);
+        return;
+      }
     }
 
     if (!req("method").isString()) {

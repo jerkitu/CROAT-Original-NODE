@@ -31,9 +31,8 @@ class WalletService;
 
 class PaymentServiceJsonRpcServer : public CryptoNote::JsonRpcServer {
 public:
-  PaymentServiceJsonRpcServer(System::Dispatcher& sys, System::Event& stopEvent, WalletService& service, Logging::ILogger& loggerGroup);
+  PaymentServiceJsonRpcServer(System::Dispatcher& sys, System::Event& stopEvent, WalletService& service, Logging::ILogger& loggerGroup, PaymentService::Configuration& config);
   PaymentServiceJsonRpcServer(const PaymentServiceJsonRpcServer&) = delete;
-
 protected:
   virtual void processJsonRpcRequest(const Common::JsonValue& req, Common::JsonValue& resp) override;
 
