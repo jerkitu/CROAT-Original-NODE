@@ -21,13 +21,16 @@
 #include <unordered_map>
 
 #include <Logging/LoggerRef.h>
-#include "Common/Math.h"
+#include "ITransaction.h"
 #include "CoreRpcServerCommandsDefinitions.h"
+
+#include "Common/Math.h"
 
 namespace CryptoNote {
 
 class core;
 class NodeServer;
+class BlockchainExplorer;
 class ICryptoNoteProtocolQuery;
 
 class RpcServer : public HttpServer {

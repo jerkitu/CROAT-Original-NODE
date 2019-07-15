@@ -39,7 +39,6 @@
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "P2p/NetNode.h"
 #include "P2p/NetNodeConfig.h"
-#include "Rpc/RpcServer.h"
 #include "Rpc/RpcServerConfig.h"
 #include "version.h"
 
@@ -471,7 +470,7 @@ int main(int argc, char* argv[])
     //create objects and link them
     CryptoNote::CurrencyBuilder currencyBuilder(logManager);
     currencyBuilder.cryptonoteName(command_line::get_arg(vm, arg_CRYPTONOTE_NAME));
-  currencyBuilder.mandatoryTransaction(command_line::get_arg(vm, arg_MANDATORY_TRANSACTION));
+    currencyBuilder.mandatoryTransaction(command_line::get_arg(vm, arg_MANDATORY_TRANSACTION));
     currencyBuilder.genesisCoinbaseTxHex(command_line::get_arg(vm, arg_GENESIS_COINBASE_TX_HEX));
     currencyBuilder.publicAddressBase58Prefix(command_line::get_arg(vm, arg_CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX));
     currencyBuilder.moneySupply(command_line::get_arg(vm, arg_MONEY_SUPPLY));
@@ -516,31 +515,31 @@ int main(int argc, char* argv[])
       return 1;
     }
     CryptoNote::Currency currency = currencyBuilder.currency();
-CryptoNote::core ccore(currency, nullptr, logManager, command_line::get_arg(vm, arg_enable_blockchain_indexes));
+    CryptoNote::core ccore(currency, nullptr, logManager, command_line::get_arg(vm, arg_enable_blockchain_indexes));
 
     CryptoNote::Checkpoints checkpoints(logManager);
-std::vector<CryptoNote::CheckpointData> checkpoint_input;
-std::vector<std::string> checkpoint_args = command_line::get_arg(vm, arg_CHECKPOINT);
-std::vector<std::string> checkpoint_blockIds;
-if (command_line::has_arg(vm, arg_CHECKPOINT) && checkpoint_args.size() != 0)
-{
-  for(const std::string& str: checkpoint_args) {
-    std::string::size_type p = str.find(':');
-    if(p != std::string::npos)
+    std::vector<CryptoNote::CheckpointData> checkpoint_input;
+    std::vector<std::string> checkpoint_args = command_line::get_arg(vm, arg_CHECKPOINT);
+    std::vector<std::string> checkpoint_blockIds;
+    if (command_line::has_arg(vm, arg_CHECKPOINT) && checkpoint_args.size() != 0)
     {
-      uint32_t checkpoint_height = std::stoull(str.substr(0, p));
-      checkpoint_blockIds.push_back(str.substr(p+1, str.size()));
-      checkpoint_input.push_back({ checkpoint_height, checkpoint_blockIds.back().c_str() });
+        for(const std::string& str: checkpoint_args) {
+            std::string::size_type p = str.find(':');
+            if(p != std::string::npos)
+            {
+                uint32_t checkpoint_height = std::stoull(str.substr(0, p));
+                checkpoint_blockIds.push_back(str.substr(p+1, str.size()));
+                checkpoint_input.push_back({ checkpoint_height, checkpoint_blockIds.back().c_str() });
+            }
+        }
     }
-  }
-}
-else
-{
-  //if (command_line::get_arg(vm, arg_CRYPTONOTE_NAME) == "croat") {
-      checkpoint_input = CryptoNote::CHECKPOINTS;
-  //}
-}
-for (const auto& cp : checkpoint_input) {
+    else
+    {
+        //if (command_line::get_arg(vm, arg_CRYPTONOTE_NAME) == "croat") {
+            checkpoint_input = CryptoNote::CHECKPOINTS;
+        //}
+    }
+    for (const auto& cp : checkpoint_input) {
       checkpoints.add_checkpoint(cp.height, cp.blockId);
     }
 
@@ -582,7 +581,7 @@ for (const auto& cp : checkpoint_input) {
 
     cprotocol.set_p2p_endpoint(&p2psrv);
     ccore.set_cryptonote_protocol(&cprotocol);
-    DaemonCommandsHandler dch(ccore, p2psrv, logManager);
+    DaemonCommandsHandler dch(ccore, p2psrv, logManager, cprotocol, &rpcServer);
 
     // initialize objects
     logger(INFO) << "Initializing p2p server...";

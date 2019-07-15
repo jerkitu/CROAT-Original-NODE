@@ -22,8 +22,12 @@
 #include <unordered_map>
 
 // CryptoNote
+#include "BlockchainExplorerData.h"
 #include "Common/StringTools.h"
+#include "Common/Base58.h"
+#include "CryptoNoteCore/TransactionUtils.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
+#include "CryptoNoteCore/CryptoNoteFormatUtils.h"
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteCore/IBlock.h"
 #include "CryptoNoteCore/Miner.h"
@@ -363,17 +367,12 @@ bool RpcServer::on_get_info(const COMMAND_RPC_GET_INFO::request& req, COMMAND_RP
   uint64_t total_conn = m_p2p.get_connections_count();
   res.outgoing_connections_count = m_p2p.get_outgoing_connections_count();
   res.incoming_connections_count = total_conn - res.outgoing_connections_count;
-  //res.rpc_connections_count = get_connections_count();
+  res.rpc_connections_count = get_connections_count();
   res.white_peerlist_size = m_p2p.getPeerlistManager().get_white_peers_count();
   res.grey_peerlist_size = m_p2p.getPeerlistManager().get_gray_peers_count();
   res.last_known_block_index = std::max(static_cast<uint32_t>(1), m_protocolQuery.getObservedHeight()) - 1;
   res.version = PROJECT_VERSION_LONG;
-  if (m_fee_address.empty()) {
-	  res.fee_address = "";
-  }
-  else {
-	  res.fee_address = m_fee_address;
-  }
+  res.fee_address = m_fee_address.empty() ? std::string() : m_fee_address;
   res.status = CORE_RPC_STATUS_OK;
   return true;
 }

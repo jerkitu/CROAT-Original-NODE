@@ -98,4 +98,8 @@ void HttpServer::acceptLoop() {
   }
 }
 
+size_t HttpServer::get_connections_count() const {
+	return m_connections.size();
+}
+
 }
