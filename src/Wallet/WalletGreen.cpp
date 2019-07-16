@@ -363,7 +363,7 @@ void WalletGreen::save(WalletSaveLevel saveLevel, const std::string& extra) {
   }
 
   startBlockchainSynchronizer();
-  m_logger(INFO, BRIGHT_WHITE) << "Container saved";
+  m_logger(INFO, BRIGHT_WHITE) << "Container saved!";
 }
 
 void WalletGreen::exportWallet(const std::string& path, bool encrypt, WalletSaveLevel saveLevel, const std::string& extra) {

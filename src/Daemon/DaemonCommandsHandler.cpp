@@ -155,7 +155,7 @@ bool DaemonCommandsHandler::status(const std::vector<std::string>& args) {
     << "Transactions in mempool: " << tx_pool_size << std::endl
     << "Daemon uptime: " << (unsigned int)floor(uptime / 60.0 / 60.0 / 24.0) << "d " << (unsigned int)floor(fmod((uptime / 60.0 / 60.0), 24.0)) << "h "
     << (unsigned int)floor(fmod((uptime / 60.0), 60.0)) << "m " << (unsigned int)fmod(uptime, 60.0) << "s"
-    << std::endl;
+    << "\n" << std::endl;    
 
   return true;
 }
