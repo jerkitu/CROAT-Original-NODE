@@ -328,7 +328,6 @@ uint32_t stringToIpAddress(std::string addr) {
   return ((v[3] << 24) | (v[2] << 16) | (v[1] << 8) | v[0]);
 }
 
-
 bool parseIpAddressAndPort(uint32_t& ip, uint32_t& port, const std::string& addr) {
   uint32_t v[4];
   uint32_t localPort;
