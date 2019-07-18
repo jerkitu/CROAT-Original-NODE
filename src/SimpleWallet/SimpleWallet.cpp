@@ -24,6 +24,7 @@
 #include <thread>
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -48,6 +49,7 @@
 #include "WalletLegacy/WalletHelper.h"
 
 #include "version.h"
+#include "mnemonics/electrum-words.h"
 
 #include <Logging/LoggerManager.h>
 
@@ -71,6 +73,9 @@ const command_line::arg_descriptor<std::string> arg_generate_new_wallet = { "gen
 const command_line::arg_descriptor<std::string> arg_daemon_address = { "daemon-address", "Use CROAT daemon instance at <host>:<port>", "" };
 const command_line::arg_descriptor<std::string> arg_daemon_host = { "daemon-host", "Use CROAT daemon instance at host <arg> instead of localhost", "" };
 const command_line::arg_descriptor<std::string> arg_password = { "password", "Wallet password", "", true };
+const command_line::arg_descriptor<std::string> arg_mnemonic_seed = { "mnemonic-seed", "Specify mnemonic seed for wallet recovery/creation", "" };
+const command_line::arg_descriptor<bool> arg_restore_deterministic_wallet = { "restore-deterministic-wallet", "Recover wallet using electrum-style mnemonic", false };
+const command_line::arg_descriptor<bool> arg_non_deterministic = { "non-deterministic", "Creates non-deterministic (classic) view and spend keys", false };
 const command_line::arg_descriptor<uint16_t> arg_daemon_port = { "daemon-port", "Use CROAT daemon instance at port <arg> instead of 46348", 0};
 const command_line::arg_descriptor<uint32_t> arg_log_level = { "set_log", "", INFO, true };
   const command_line::arg_descriptor<uint64_t> arg_DEFAULT_FEE  = {"DEFAULT_FEE", "Default fee", CryptoNote::parameters::DEFAULT_FEE};  
@@ -491,6 +496,37 @@ bool simple_wallet::help(const std::vector<std::string> &args/* = std::vector<st
   return true;
 }
 
+bool simple_wallet::seed(const std::vector<std::string> &args/* = std::vector<std::string>()*/) {
+  std::string electrum_words;
+  bool success = m_wallet->getSeed(electrum_words);
+
+  if (success)
+  {
+    std::cout << "\nPLEASE NOTE: the following 25 words can be used to recover access to your wallet.\nPlease write them down and store them somewhere safe and secure.\nPlease do not store them in your email or on file storage services outside of your immediate control.\n\n";
+//    std::cout << electrum_words << std::endl;
+    std::string electrum_words_string = electrum_words;
+    std::vector<std::string> split_electrum_words_string;
+    boost::split(split_electrum_words_string, electrum_words_string, boost::is_any_of(" "));
+
+    std::cout << "\n*****************************SEED WORDS*******************************\n\n";    
+    for (int i = 0, j = 0; i < 25; i++)
+    {
+      std::cout << split_electrum_words_string[i] << " ";
+      if (++j == 10)
+      {
+         std::cout << "\n";
+         j = 0;
+      }
+    }
+    std::cout << "\n\n**********************************************************************\n";    
+  }
+  else
+  {
+    fail_msg_writer() << "The wallet is non-deterministic and doesn't have mnemonic seed.";
+  }
+  return true;
+}
+
 bool simple_wallet::exit(const std::vector<std::string> &args) {
   m_consoleHandler.requestStop();
   return true;
@@ -527,6 +563,7 @@ simple_wallet::simple_wallet(System::Dispatcher& dispatcher, const CryptoNote::C
   m_consoleHandler.setHandler("address", boost::bind(&simple_wallet::print_address, this, _1), "Show current wallet public address");
   m_consoleHandler.setHandler("save", boost::bind(&simple_wallet::save, this, _1), "Save wallet synchronized data");
   m_consoleHandler.setHandler("reset", boost::bind(&simple_wallet::reset, this, _1), "Discard cache data and start synchronizing from the start");
+  m_consoleHandler.setHandler("show_seed", boost::bind(&simple_wallet::seed, this, _1), "Get wallet recovery phrase (deterministic seed)");
   m_consoleHandler.setHandler("help", boost::bind(&simple_wallet::help, this, _1), "Show this help");
   m_consoleHandler.setHandler("exit", boost::bind(&simple_wallet::exit, this, _1), "Close wallet");
 }
@@ -561,7 +598,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   }
 
   if (m_generate_new.empty() && m_wallet_file_arg.empty()) {
-    std::cout << "Nor 'generate-new-wallet' neither 'wallet-file' argument was specified.\nWhat do you want to do?\n[O]pen existing wallet, [G]enerate new wallet file, [I]mport wallet or [E]xit.\n";
+    std::cout << "No 'generate-new-wallet' or 'wallet-file' argument was specified!!\n\nWhat do you want to do?\n\n[O]pen existing wallet, [G]enerate new wallet file, [I]mport wallet or [E]xit.\n\n";
     char c;
     do {
       std::string answer;
@@ -578,7 +615,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
       return false;
     }
 
-    std::cout << "Specify wallet file name (e.g., wallet.bin).\n";
+    std::cout << "Specify wallet file name (e.g., croat_wallet.wallet).\n";
     std::string userInput;
     do {
       std::cout << "Wallet file name: ";
@@ -595,10 +632,15 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     }
   }
 
-  if (!m_generate_new.empty() && !m_wallet_file_arg.empty() && !m_import_new.empty()) {
-    fail_msg_writer() << "you can't specify 'generate-new-wallet' and 'wallet-file' arguments simultaneously";
+  if (!m_generate_new.empty() && !m_wallet_file_arg.empty()) {
+    fail_msg_writer() << "You can't specify 'generate-new-wallet' and 'wallet-file' arguments simultaneously";
     return false;
   }
+  
+  if (!m_generate_new.empty() && m_restore_deterministic_wallet) {
+      fail_msg_writer() << "You can't generate new and restore wallet simultaneously.";
+      return false;
+  }  
 
   std::string walletFileName;
   sync_from_zero = command_line::get_arg(vm, arg_SYNC_FROM_ZERO);
@@ -651,6 +693,43 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   if (error) {
     fail_msg_writer() << "failed to init NodeRPCProxy: " << error.message();
     return false;
+  }
+
+  if (m_restore_deterministic_wallet && !m_wallet_file_arg.empty()) {
+    // check for recover flag. If present, require electrum word list (only recovery option for now).
+    if (m_restore_deterministic_wallet) {
+      if (m_non_deterministic) {
+        fail_msg_writer() << "Cannot specify both --restore-deterministic-wallet and --non-deterministic";
+        return false;
+      }
+
+      if (m_mnemonic_seed.empty()) {
+        std::cout << "Specify mnemonic seed: ";
+        std::getline(std::cin, m_mnemonic_seed);
+
+        if (m_mnemonic_seed.empty()) {
+          fail_msg_writer() << "Specify a recovery parameter with the --mnemonic-seed=\"words list here\"";
+          return false;
+        }
+      }
+      std::string lang = "English";
+      if (!Crypto::ElectrumWords::words_to_bytes(m_mnemonic_seed, m_recovery_key, lang)) {
+        fail_msg_writer() << "Electrum-style word list failed verification";
+        return false;
+      }
+	}
+    std::string walletAddressFile = prepareWalletAddressFilename(m_wallet_file_arg);
+    boost::system::error_code ignore;
+    if (boost::filesystem::exists(walletAddressFile, ignore)) {
+      logger(ERROR, BRIGHT_RED) << "Address file already exists: " + walletAddressFile;
+      return false;
+    }
+
+    bool r = gen_wallet(m_wallet_file_arg, pwd_container.password(), m_recovery_key, m_restore_deterministic_wallet, m_non_deterministic);
+    if (!r) {
+      logger(ERROR, BRIGHT_RED) << "Account creation failed";
+      return false;
+    }
   }
 
   sync_from_zero = command_line::get_arg(vm, arg_SYNC_FROM_ZERO);
@@ -727,9 +806,11 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     m_wallet->addObserver(this);
     m_node->addObserver(static_cast<INodeObserver*>(this));
 
-    logger(INFO, BRIGHT_WHITE) << "Opened wallet: " << m_wallet->getAddress();
+    logger(INFO, BRIGHT_WHITE) << "Opened wallet: " << m_wallet->getAddress() << "\n" << std::endl;
+    
+    show_balance();
 
-    success_msg_writer() <<
+    std::cout <<
       "**********************************************************************\n" <<
       "Use \"help\" command to see the list of available commands.\n" <<
       "**********************************************************************" << std::endl;
@@ -755,10 +836,82 @@ void simple_wallet::handle_command_line(const boost::program_options::variables_
   m_daemon_address = command_line::get_arg(vm, arg_daemon_address);
   m_daemon_host = command_line::get_arg(vm, arg_daemon_host);
   m_daemon_port = command_line::get_arg(vm, arg_daemon_port);
-m_default_fee = command_line::get_arg(vm, arg_DEFAULT_FEE);
-if (m_currency.minimumFee() > m_default_fee) {
-  m_default_fee = m_currency.minimumFee();
+  m_default_fee = command_line::get_arg(vm, arg_DEFAULT_FEE);
+  if (m_currency.minimumFee() > m_default_fee) {
+    m_default_fee = m_currency.minimumFee();
+  }
+  
+  m_restore_deterministic_wallet = command_line::get_arg(vm, arg_restore_deterministic_wallet);
+  m_non_deterministic = command_line::get_arg(vm, arg_non_deterministic);
+  m_mnemonic_seed = command_line::get_arg(vm, arg_mnemonic_seed);
 }
+//----------------------------------------------------------------------------------------------------
+bool simple_wallet::gen_wallet(const std::string &wallet_file, const std::string& password, const Crypto::SecretKey& recovery_key, bool recover, bool two_random) {
+  m_wallet_file = wallet_file;
+
+  m_wallet.reset(new WalletLegacy(m_currency, *m_node.get()));
+  m_node->addObserver(static_cast<INodeObserver*>(this));
+  m_wallet->addObserver(this);
+
+  Crypto::SecretKey recovery_val;
+  try
+  {
+	m_initResultPromise.reset(new std::promise<std::error_code>());
+	std::future<std::error_code> f_initError = m_initResultPromise->get_future();
+
+    recovery_val = m_wallet->generateKey(password, recovery_key, recover, two_random);
+	auto initError = f_initError.get();
+    m_initResultPromise.reset(nullptr);
+    if (initError) {
+      fail_msg_writer() << "failed to generate new wallet: " << initError.message();
+      return false;
+    }
+
+    try {
+      CryptoNote::WalletHelper::storeWallet(*m_wallet, m_wallet_file);
+    } catch (std::exception& e) {
+      fail_msg_writer() << "failed to save new wallet: " << e.what();
+      throw;
+    }
+
+    AccountKeys keys;
+    m_wallet->getAccountKeys(keys);
+
+    logger(INFO, BRIGHT_WHITE) <<
+      "Generated new wallet: " << m_wallet->getAddress() << std::endl <<
+      "view key: " << Common::podToHex(keys.viewSecretKey);
+  }
+  catch (const std::exception& e) {
+    fail_msg_writer() << "failed to generate new wallet: " << e.what();
+    return false;
+  }
+
+  // convert rng value to electrum-style word list
+  std::string lang = "English";
+  std::string electrum_words;
+  Crypto::ElectrumWords::bytes_to_words(recovery_val, electrum_words, lang);
+  std::string print_electrum = "";
+
+  success_msg_writer() <<
+    "**********************************************************************\n" <<
+    "Your CROAT wallet has been generated.\n" <<
+    "To start synchronizing with the daemon use \"refresh\" command.\n" <<
+    "Use \"help\" command to see the list of available commands.\n" <<
+    "Always use \"exit\" command when closing simplewallet to save\n" <<
+    "current session's state. Otherwise, you will possibly need to synchronize \n" <<
+    "your wallet again. Your wallet key is NOT under risk anyway.\n"
+  ;
+
+  if (!two_random)
+  {
+	std::cout << "\nPLEASE NOTE: the following 25 words can be used to recover access to your wallet. " <<
+	  "Please write them down and store them somewhere safe and secure. Please do not store them in your email or " <<
+	  "on file storage services outside of your immediate control.\n\n";
+    std::cout << electrum_words << std::endl;
+  }
+  success_msg_writer() << "**********************************************************************";
+
+  return true;  
 }
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string& password) {
@@ -771,7 +924,9 @@ bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string
     m_initResultPromise.reset(new std::promise<std::error_code>());
     std::future<std::error_code> f_initError = m_initResultPromise->get_future();
     m_wallet->syncAll(sync_from_zero);
-    m_wallet->initAndGenerate(password);
+    // m_wallet->initAndGenerate(password);
+	// Create deterministic wallets by default
+	m_wallet->initAndGenerateDeterministic(password);
     auto initError = f_initError.get();
     m_initResultPromise.reset(nullptr);
     if (initError) {
@@ -797,6 +952,14 @@ bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string
     fail_msg_writer() << "failed to generate new wallet: " << e.what() << std::endl;
     return false;
   }
+  
+  AccountKeys keys;
+  m_wallet->getAccountKeys(keys);
+  // convert rng value to electrum-style word list
+  std::string lang = "English";
+  std::string electrum_words;
+  Crypto::ElectrumWords::bytes_to_words(keys.spendSecretKey, electrum_words, lang);
+  std::string print_electrum = "";  
 
   success_msg_writer() <<
     "**********************************************************************\n" <<
@@ -805,7 +968,14 @@ bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string
     "Always use \"exit\" command when closing simplewallet to save\n" <<
     "current session's state. Otherwise, you will possibly need to synchronize \n" <<
     "your wallet again. Your wallet key is NOT under risk anyway.\n" <<
-    "**********************************************************************" << std::endl;
+    "**********************************************************************";
+    
+
+  std::cout << "\nPLEASE NOTE: the following 25 words can be used to recover access to your wallet. " <<
+	  "Please write them down and store them somewhere safe and secure. Please do not store them in your email or " <<
+	  "on file storage services outside of your immediate control.\n\n";
+  std::cout << electrum_words << std::endl;
+  success_msg_writer() << "**********************************************************************";    
   return true;
 }
 //----------------------------------------------------------------------------------------------------
@@ -1037,8 +1207,8 @@ bool simple_wallet::export_keys(const std::vector<std::string>& args/* = std::ve
   AccountKeys keys;
   m_wallet->getAccountKeys(keys);
 
-  success_msg_writer(true) << "\n\nAddress:\n" << m_wallet->getAddress() << "\n";
-  success_msg_writer(true) << 
+  std::cout << "\n\nYour CROAT Address:\n" << m_wallet->getAddress() << std::endl;
+  std::cout << 
   "\n\n--------------------------- CLI KEYS ---------------------------\nSecret Spend Key:\n" << 
   Common::podToHex(keys.spendSecretKey) << 
   "\nSecret View Key:\n" << 
@@ -1095,7 +1265,7 @@ bool simple_wallet::export_tracking_key(const std::vector<std::string>& args/* =
 }
 
 bool simple_wallet::show_balance(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
-  success_msg_writer() << "available balance: " << m_currency.formatAmount(m_wallet->actualBalance()) <<
+  success_msg_writer() << "Available balance: " << m_currency.formatAmount(m_wallet->actualBalance()) <<
     ", locked amount: " << m_currency.formatAmount(m_wallet->pendingBalance());
 
   return true;
@@ -1298,6 +1468,9 @@ int main(int argc, char* argv[]) {
   po::options_description desc_params("Wallet options");
   command_line::add_arg(desc_params, arg_wallet_file);
   command_line::add_arg(desc_params, arg_generate_new_wallet);
+  command_line::add_arg(desc_params, arg_restore_deterministic_wallet);
+  command_line::add_arg(desc_params, arg_non_deterministic);
+  command_line::add_arg(desc_params, arg_mnemonic_seed);  
   command_line::add_arg(desc_params, arg_password);
   command_line::add_arg(desc_params, arg_daemon_address);
   command_line::add_arg(desc_params, arg_daemon_host);
@@ -1351,12 +1524,41 @@ int main(int argc, char* argv[]) {
       CryptoNote::Currency tmp_currency = CryptoNote::CurrencyBuilder(logManager).currency();
       CryptoNote::simple_wallet tmp_wallet(dispatcher, tmp_currency, logManager);
 
-      std::cout << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG << std::endl;
+      std::cout << CRYPTONOTE_NAME << " Wallet v" << PROJECT_VERSION_LONG << std::endl;
       std::cout << "Usage: simplewallet [--wallet-file=<file>|--generate-new-wallet=<file>] [--daemon-address=<host>:<port>] [<COMMAND>]";
       std::cout << desc_all << '\n' << tmp_wallet.get_commands_str();
       return false;
     } else if (command_line::get_arg(vm, command_line::arg_version))  {
-      std::cout << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG;
+        
+    #ifdef _WIN32   
+    
+
+    std::cout <<
+    "                                                \n"
+    "          WELCOME TO CROAT WALLET!              \n"
+    "                                                \n"    
+    "          LA CRIPTOMONEDA CATALANA              \n"       
+    "       .-( https://CROAT.community )-.          \n"    
+    "                                                \n" << ENDL;
+    
+    #else
+
+    std::cout <<	
+    "                                            \n"
+    "  ██████╗██████╗  ██████╗  █████╗ ████████╗ \n"
+    " ██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝ \n"
+    " ██║     ██████╔╝██║   ██║███████║   ██║    \n"
+    " ██║     ██╔══██╗██║   ██║██╔══██║   ██║    \n"
+    " ╚██████╗██║  ██║╚██████╔╝██║  ██║   ██║    \n"
+    "  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    \n"
+    "         LA CRIPTOMONEDA CATALANA           \n"       
+    "                                            \n"           
+    "     .-( https://CROAT.community )-.        \n"        
+	"                                            \n" << ENDL;
+        
+    #endif
+    
+      std::cout << CRYPTONOTE_NAME << " Wallet v" << PROJECT_VERSION_LONG;
       return false;
     }
 
@@ -1401,8 +1603,36 @@ int main(int argc, char* argv[]) {
 
   logManager.configure(buildLoggerConfiguration(logLevel, Common::ReplaceExtenstion(argv[0], ".log")));
 
-  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG;
+  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " Wallet v" << PROJECT_VERSION_LONG;
+  
+    #ifdef _WIN32   
 
+
+    std::cout <<
+    "                                                \n"
+    "          WELCOME TO CROAT WALLET!              \n"
+    "                                                \n"    
+    "          LA CRIPTOMONEDA CATALANA              \n"       
+    "       .-( https://CROAT.community )-.          \n"    
+    "                                                \n" << ENDL;
+    
+    #else
+
+    std::cout <<	
+    "                                            \n"
+    "  ██████╗██████╗  ██████╗  █████╗ ████████╗ \n"
+    " ██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝ \n"
+    " ██║     ██████╔╝██║   ██║███████║   ██║    \n"
+    " ██║     ██╔══██╗██║   ██║██╔══██║   ██║    \n"
+    " ╚██████╗██║  ██║╚██████╔╝██║  ██║   ██║    \n"
+    "  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    \n"
+    "         LA CRIPTOMONEDA CATALANA           \n"       
+    "                                            \n"           
+    "     .-( https://CROAT.community )-.        \n"        
+	"                                            \n" << ENDL;
+        
+    #endif
+    
   CryptoNote::CurrencyBuilder currencyBuilder(logManager);
   currencyBuilder.genesisCoinbaseTxHex(command_line::get_arg(vm, arg_GENESIS_COINBASE_TX_HEX));
   currencyBuilder.publicAddressBase58Prefix(command_line::get_arg(vm, arg_CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX));
@@ -1507,7 +1737,7 @@ int main(int argc, char* argv[]) {
     try  {
       walletFileName = ::tryToOpenWalletOrLoadKeysOrThrow(logger, wallet, wallet_file, wallet_password);
 
-      logger(INFO) << "available balance: " << currency.formatAmount(wallet->actualBalance()) <<
+      logger(INFO) << "Available balance: " << currency.formatAmount(wallet->actualBalance()) <<
       ", locked amount: " << currency.formatAmount(wallet->pendingBalance());
 
       logger(INFO, BRIGHT_GREEN) << "Loaded ok";

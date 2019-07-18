@@ -32,6 +32,7 @@
 #include "CryptoNoteCore/Currency.h"
 #include "NodeRpcProxy/NodeRpcProxy.h"
 #include "WalletLegacy/WalletHelper.h"
+#include "WalletLegacy/WalletLegacy.h"
 
 #include <Logging/LoggerRef.h>
 #include <Logging/LoggerManager.h>
@@ -76,10 +77,12 @@ namespace CryptoNote
 
     bool new_wallet(const std::string &wallet_file, const std::string& password);
 	bool new_wallet(Crypto::SecretKey &secret_key, Crypto::SecretKey &view_key, const std::string &wallet_file, const std::string& password);
+    bool gen_wallet(const std::string &wallet_file, const std::string& password, const Crypto::SecretKey& recovery_key = Crypto::SecretKey(), bool recover = false, bool two_random = false);    
     bool open_wallet(const std::string &wallet_file, const std::string& password);
     bool close_wallet();
 
     bool help(const std::vector<std::string> &args = std::vector<std::string>());
+	bool seed(const std::vector<std::string> &args = std::vector<std::string>());    
     bool exit(const std::vector<std::string> &args);
     bool start_mining(const std::vector<std::string> &args);
     bool stop_mining(const std::vector<std::string> &args);
@@ -164,12 +167,17 @@ namespace CryptoNote
 
     std::string m_daemon_address;
     std::string m_daemon_host;
+    std::string m_mnemonic_seed;    
     uint16_t m_daemon_port;
-uint32_t m_mandatoryTransaction;
-uint64_t m_maxTransactionSizeLimit;
-uint64_t m_default_fee;
+    uint32_t m_mandatoryTransaction;
+    uint64_t m_maxTransactionSizeLimit;
+    uint64_t m_default_fee;
 
     std::string m_wallet_file;
+    
+    Crypto::SecretKey m_recovery_key;  // recovery key (used as random for wallet gen)
+	bool m_restore_deterministic_wallet;  // recover flag
+	bool m_non_deterministic;  // old 2-random generation    
     bool sync_from_zero;
 
     std::unique_ptr<std::promise<std::error_code>> m_initResultPromise;
