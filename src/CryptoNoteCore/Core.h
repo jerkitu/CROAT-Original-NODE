@@ -86,6 +86,7 @@ namespace CryptoNote {
      virtual bool getBlocksByTimestamp(uint64_t timestampBegin, uint64_t timestampEnd, uint32_t blocksNumberLimit, std::vector<Block>& blocks, uint32_t& blocksNumberWithinTimestamps) override;
      virtual bool getPoolTransactionsByTimestamp(uint64_t timestampBegin, uint64_t timestampEnd, uint32_t transactionsNumberLimit, std::vector<Transaction>& transactions, uint64_t& transactionsNumberWithinTimestamps) override;
      virtual bool getTransactionsByPaymentId(const Crypto::Hash& paymentId, std::vector<Transaction>& transactions) override;
+	 virtual std::vector<Crypto::Hash> getTransactionHashesByPaymentId(const Crypto::Hash& paymentId) override;     
      virtual bool getOutByMSigGIndex(uint64_t amount, uint64_t gindex, MultisignatureOutput& out) override;
      virtual std::unique_ptr<IBlock> getBlock(const Crypto::Hash& blocksId) override;
      virtual bool handleIncomingTransaction(const Transaction& tx, const Crypto::Hash& txHash, size_t blobSize, tx_verification_context& tvc, bool keptByBlock) override;
@@ -99,6 +100,8 @@ namespace CryptoNote {
      uint32_t get_current_blockchain_height();
      uint8_t getCurrentBlockMajorVersion() override;
 	 uint8_t getBlockMajorVersionForHeight(uint32_t height) override;
+     
+     static bool getPaymentId(const Transaction& transaction, Crypto::Hash& paymentId);     
      
      bool have_block(const Crypto::Hash& id) override;
      std::vector<Crypto::Hash> buildSparseChain() override;

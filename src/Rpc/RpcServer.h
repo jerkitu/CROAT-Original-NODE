@@ -97,6 +97,8 @@ private:
   bool f_getMixin(const Transaction& transaction, uint64_t& mixin);
   bool f_on_get_blockchain_settings(const F_COMMAND_RPC_GET_BLOCKCHAIN_SETTINGS::request& req, F_COMMAND_RPC_GET_BLOCKCHAIN_SETTINGS::response& res);
   
+  bool k_on_transactions_by_payment_id(const K_COMMAND_RPC_GET_TRANSACTIONS_BY_PAYMENT_ID::request& req, K_COMMAND_RPC_GET_TRANSACTIONS_BY_PAYMENT_ID::response& res);
+  
   Logging::LoggerRef logger;
   core& m_core;
   NodeServer& m_p2p;
