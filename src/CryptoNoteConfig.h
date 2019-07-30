@@ -81,7 +81,7 @@ const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
 const uint32_t UPGRADE_HEIGHT_V2                                = 1;
 const uint32_t UPGRADE_HEIGHT_V3                                = 2;
-const uint32_t UPGRADE_HEIGHT_V4                                = 1010101; // fork V4 blocks
+const uint32_t UPGRADE_HEIGHT_V4                                = 1031714; // fork V4 blocks
 
 const unsigned UPGRADE_VOTING_THRESHOLD                         = 90;  // percent
 const uint32_t   UPGRADE_VOTING_WINDOW                         = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
@@ -98,7 +98,7 @@ const char     CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[]      = "blockchainindice
 const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010701ff0001d8cba1abb6e2fef4140288ea25298cf01cbf265202303707116c16290882a0a3f47c60f7edd36a5f813c21011ba0f0ca3932e752111d5a4d8d03337cb44399d7e991bbc6148d018b35fd0a26";
 
-const uint32_t KILL_MM_HEIGHT                                = 1010101; //Block height to start killing Merged Mining as child coin
+const uint32_t MAX_BLOCKCHAIN_DIFF                           = 0; //Max Block height difference to sync. 0 to disable.
 
 } // parameters
 
@@ -134,20 +134,20 @@ const uint64_t P2P_DEFAULT_INVOKE_TIMEOUT                    = 60 * 2 * 1000; //
 const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          // 5 seconds
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
-const char* const SEED_NODES[] = { 
+const char* const SEED_NODES[] = {
   "nodes.croatcoin.info:46347",     // CROATCoin.info Random Nodes
   "173.249.32.180:46347",                 // Node-01 de CROAT Pirineus
   "80.241.213.210:46347",                 // Node-02 de CROAT Pirineus
-  "90.74.0.202:46347",                    // Node de @JeRKiTu
+  "84.76.166.182:46347",                    // Node de @JeRKiTu
   "199.247.29.17:46347",                  // Node de POOL.CAT 
   "173.199.71.78:46347",                  // Node-01 CROAT.communitiy
   "104.238.167.37:46347",                 // Node-02 CROAT.communitiy
 };
 
-const char* const TRUSTED_NODES[] = { 
+const char* const TRUSTED_NODES[] = {
   "173.249.32.180",                 // Node-01 de CROAT Pirineus
   "80.241.213.210",                 // Node-02 de CROAT Pirineus
-  "90.74.0.202",                    // Node del Joan
+  "84.76.166.182",                    // Node del Joan
   "199.247.29.17",                  // Node de POOL.CAT 
   "173.199.71.78",                  // Node-01 CROAT.communitiy
   "104.238.167.37",                 // Node-02 CROAT.communitiy

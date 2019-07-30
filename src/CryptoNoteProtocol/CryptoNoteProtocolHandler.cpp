@@ -171,10 +171,9 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     }
   } else {
 
-   //Check for latest Daemon version
-      COMMAND_HANDSHAKE::request request;
+     //Check for latest Daemon version
       COMMAND_HANDSHAKE::response response;
-    
+      
       std::string remote_version = boost::replace_all_copy(response.node_data.node_version, ".", "");
       std::stringstream ss;
       ss << PROJECT_VERSION;
@@ -203,7 +202,7 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
             }
             else 
             {
-                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote node " << remote_ip << " is not up to date! Closing connection...";
+                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote node " << remote_ip << " is not up to date! ( " << remote_version << " ) Closing connection...";
                 version_errors = 1;            
                 return false;
             }
@@ -226,10 +225,10 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     // Continue 
     
     //Check height difference
-	//if we are more than 30000 blocks (about 20 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
+	//if we are more than "CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF" blocks behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
 	//download up to date copy of the blockchain if needed
-	if (diff >= 30000) {
-      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD!. You need to download an updated copy of the Blockchain";
+	if ((diff >= CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF) && (CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF != 0)) {
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD!. You need to download an updated copy of the Blockchain! Go to http://blockchain.croat.community to download LAST updated Blockchain!";
       context.m_state = CryptoNoteConnectionContext::state_shutdown;
       return false;
     }

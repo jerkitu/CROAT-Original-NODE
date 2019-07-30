@@ -590,7 +590,7 @@ namespace CryptoNote
       return false;
     }
     
-    //Check for latest Daemon version
+      //Check for latest Daemon version
       std::string remote_version = boost::replace_all_copy(rsp.node_data.node_version, ".", "");
       
       std::string remote_version_str = rsp.node_data.node_version;
@@ -618,7 +618,7 @@ namespace CryptoNote
             }
             else 
             {
-                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote node " << remote_ip << " is not up to date! Closing connection...";
+                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote peer " << remote_ip << " is not up to date! ( " << remote_version_str << " ) Closing connection...";
                 return false;
             }
         }
@@ -995,6 +995,7 @@ namespace CryptoNote
   bool NodeServer::get_local_node_data(basic_node_data& node_data)
   {
     node_data.version = P2PProtocolVersion::CURRENT;
+    node_data.node_version = PROJECT_VERSION;     
     time_t local_time;
     time(&local_time);
     node_data.local_time = local_time;
@@ -1051,6 +1052,7 @@ namespace CryptoNote
     rsp.connections_count = get_connections_count();
     rsp.incoming_connections_count = rsp.connections_count - get_outgoing_connections_count();
     rsp.version = PROJECT_VERSION_LONG;
+    rsp.node_version = PROJECT_VERSION;    
     rsp.os_version = Tools::get_os_version_string();
     m_payload_handler.get_stat_info(rsp.payload_info);
     return 1;
