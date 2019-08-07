@@ -92,6 +92,9 @@ const char     P2P_NET_DATA_FILENAME[]                       = "p2pstate.bin";
 const char     CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[]      = "blockchainindices.dat";
 const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010701ff0001d8cba1abb6e2fef4140288ea25298cf01cbf265202303707116c16290882a0a3f47c60f7edd36a5f813c21011ba0f0ca3932e752111d5a4d8d03337cb44399d7e991bbc6148d018b35fd0a26";
+
+const uint32_t MAX_BLOCKCHAIN_DIFF                           = 0; //Max Block height difference to sync. 0 to disable.
+
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "croat";
@@ -125,8 +128,23 @@ const uint64_t P2P_DEFAULT_INVOKE_TIMEOUT                    = 60 * 2 * 1000; //
 const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          // 5 seconds
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
-const char* const SEED_NODES[] = { 
-  "nodes.croatcoin.info:46347",     // CROATCoin.info Random Nodes
+const char* const SEED_NODES[] = {
+  "nodes.croatcoin.info:46347",           // CROATCoin.info Random Nodes
+  "173.249.32.180:46347",                 // Node-01 de CROAT Pirineus
+  "80.241.213.210:46347",                 // Node-02 de CROAT Pirineus
+  "84.76.166.182:46347",                  // Node de @JeRKiTu
+  "199.247.29.17:46347",                  // Node de POOL.CAT 
+  "173.199.71.78:46347",                  // Node-01 CROAT.communitiy
+  "104.238.167.37:46347",                 // Node-02 CROAT.communitiy
+};
+
+const char* const TRUSTED_NODES[] = {
+  "173.249.32.180",                 // Node-01 de CROAT Pirineus
+  "80.241.213.210",                 // Node-02 de CROAT Pirineus
+  "84.76.166.182",                  // Node del @JeRKiTu
+  "199.247.29.17",                  // Node de POOL.CAT 
+  "173.199.71.78",                  // Node-01 CROAT.communitiy
+  "104.238.167.37",                 // Node-02 CROAT.communitiy
 };
 
 struct CheckpointData {

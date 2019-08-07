@@ -17,14 +17,19 @@
 
 #include "version.h"
 
+#include <iostream>
+#include <string>
+
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
+#include <boost/format.hpp>
 
 #include "DaemonCommandsHandler.h"
 
 #include "Common/SignalHandler.h"
 #include "Common/PathTools.h"
+#include "Common/DnsTools.h"
 #include "crypto/hash.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/Core.h"
@@ -381,6 +386,49 @@ int main(int argc, char* argv[])
 
     logger(INFO) << CryptoNote::CRYPTONOTE_NAME << " Daemon v" << PROJECT_VERSION_LONG;
 
+    
+    //check for latest version
+    std::string domain("daemon.versions.croat.community");
+    std::vector<std::string>records;
+
+    logger(Logging::INFO) << "Getting latest version info...";
+
+    if (!Common::fetch_dns_txt(domain, records)) {
+      logger(Logging::INFO) << "Failed to get latest daemon version. Continuing...";
+      }
+    else {
+        for (const auto& record : records) {
+          std::string latest_version = boost::replace_all_copy(record, ".", "");
+
+          std::stringstream ss;
+          ss << PROJECT_VERSION;
+          std::string lvs;
+          ss >> lvs;
+
+          std::string last_version_str = record;
+          last_version_str.erase(std::remove(last_version_str.begin(), last_version_str.end(), '\n'), last_version_str.end());   
+      
+          std::string local_version = boost::replace_all_copy(lvs, ".", "");
+
+          int local_version_int = std::stoi(local_version);
+          int latest_version_int = std::stoi(latest_version);   
+
+          if(local_version_int == latest_version_int) {
+            logger(INFO, GREEN) << "GREAT! You are using an updated daemon version!! ( " << last_version_str << " )";
+            }
+          else {
+            std::cout << "\n";
+            logger(ERROR, BRIGHT_RED) << "Your daemon version is not up to date!";
+            logger(ERROR, BRIGHT_RED) << "Please download the latest daemon version " << last_version_str << " from " << "https://croat.community";
+            std::cout << "\n";
+            logger(Logging::INFO) << "Shutting down ...";
+            std::cout << "\n";
+            return 0;
+          }
+
+        }
+    }    
+
     if (command_line_preprocessor(vm, logger)) {
       return 0;
     }
@@ -394,7 +442,7 @@ int main(int argc, char* argv[])
     "                                                \n"    
     "     Daemon developed by CROAT Community!       \n"
     "                                                \n"    
-    "            .-( www.croatcoin.info )-.          \n"    
+    "       .-( https://CROAT.community )-.          \n"   
     "                                                \n" << ENDL;
     
     #else
@@ -409,7 +457,7 @@ int main(int argc, char* argv[])
     "  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    \n"
     "                                            \n"       
     "   Daemon developed by CROAT Community!     \n"
-    "         .-( www.croatcoin.info )-.         \n"        
+    "     .-( https://CROAT.community )-.        \n"       
 	"                                            \n" << ENDL;
         
     #endif

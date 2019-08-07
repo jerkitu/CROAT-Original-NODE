@@ -31,6 +31,8 @@
 #include "Serialization/BinaryInputStreamSerializer.h"
 #include "Serialization/BinaryOutputStreamSerializer.h"
 
+#include "version.h"
+
 #include "LevinProtocol.h"
 #include "P2pConnectionProxy.h"
 #include "P2pContext.h"
@@ -452,6 +454,7 @@ basic_node_data P2pNode::getNodeData() const {
   basic_node_data nodeData;
   nodeData.network_id = m_cfg.getNetworkId();
   nodeData.version = P2PProtocolVersion::CURRENT;
+  nodeData.node_version = PROJECT_VERSION;    
   nodeData.local_time = time(nullptr);
   nodeData.peer_id = m_myPeerId;
 

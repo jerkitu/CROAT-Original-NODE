@@ -42,6 +42,7 @@
 #include "Common/StdOutputStream.h"
 #include "Common/Util.h"
 #include "crypto/crypto.h"
+#include "Common/DnsTools.h"
 
 #include "ConnectionContext.h"
 #include "LevinProtocol.h"
@@ -509,7 +510,7 @@ namespace CryptoNote
 
     m_stopEvent.wait();
 
-    logger(INFO) << "Stopping NodeServer and it's" << m_connections.size() << " connections...";
+    logger(INFO) << "Stopping NodeServer and its " << m_connections.size() << " connections...";
     m_workingContextGroup.interrupt();
     m_workingContextGroup.wait();
 
@@ -585,12 +586,47 @@ namespace CryptoNote
     context.version = rsp.node_data.version;
 
     if (rsp.node_data.network_id != m_network_id) {
-      logger(Logging::ERROR) << context << "COMMAND_HANDSHAKE Failed, wrong network!  (" << rsp.node_data.network_id << "), closing connection.";
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "COMMAND_HANDSHAKE Failed, wrong network!  (" << rsp.node_data.network_id << "), closing connection.";
       return false;
     }
 
+    //Check for latest Daemon version
+      std::string remote_version = boost::replace_all_copy(rsp.node_data.node_version, ".", "");
+      
+      std::string remote_version_str = rsp.node_data.node_version;
+      remote_version_str.erase(std::remove(remote_version_str.begin(), remote_version_str.end(), '\n'), remote_version_str.end());          
+          
+      std::stringstream ss;
+      ss << PROJECT_VERSION;
+      std::string lvs;
+      ss >> lvs;
+      
+      //logger(Logging::DEBUGGING, Logging::BRIGHT_BLUE) << "OUTGOING NODE CONNECTION...";           
+
+      auto local_version = boost::replace_all_copy(lvs, ".", "");
+      auto remote_ip = Common::ipAddressToString(context.m_remote_ip);
+      
+      // Check if is trusted node
+      if (std::find(std::begin(CryptoNote::TRUSTED_NODES), std::end(CryptoNote::TRUSTED_NODES), Common::ipAddressToString(context.m_remote_ip)) != std::end(CryptoNote::TRUSTED_NODES))
+      {
+      logger(Logging::DEBUGGING, Logging::BRIGHT_BLUE) << "CONNECTING TO TRUSTED NODE.. [" << Common::ipAddressToString(context.m_remote_ip) << "] - Skip version check!!";      
+      } 
+      // Else Continue checking versions
+        else {
+          if(local_version == remote_version) {
+                logger(Logging::DEBUGGING, Logging::GREEN) << "GREAT!! Peer " << remote_ip << " are using latest version!! ( " << remote_version_str << " )";
+            }
+            else 
+            {
+                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote peer " << remote_ip << " is not up to date! ( " << remote_version_str << " ) Closing connection...";
+                return false;
+            }
+        }
+    
+    // Continue
+
     if (!handle_remote_peerlist(rsp.local_peerlist, rsp.node_data.local_time, context)) {
-      logger(Logging::ERROR) << context << "COMMAND_HANDSHAKE: failed to handle_remote_peerlist(...), closing connection.";
+      logger(Logging::ERROR, BRIGHT_RED) << context << "COMMAND_HANDSHAKE: failed to handle_remote_peerlist(...), closing connection.";
       return false;
     }
 
@@ -745,7 +781,7 @@ namespace CryptoNote
         });
 
         if (!handshakeContext.get()) {
-          logger(WARNING) << "Failed to HANDSHAKE with peer " << na;
+          logger(DEBUGGING) << "Failed to HANDSHAKE with peer " << na;
           return false;
         }
       } catch (System::InterruptedException&) {
@@ -959,6 +995,7 @@ namespace CryptoNote
   bool NodeServer::get_local_node_data(basic_node_data& node_data)
   {
     node_data.version = P2PProtocolVersion::CURRENT;
+    node_data.node_version = PROJECT_VERSION;         
     time_t local_time;
     time(&local_time);
     node_data.local_time = local_time;
@@ -1016,6 +1053,7 @@ namespace CryptoNote
     rsp.incoming_connections_count = rsp.connections_count - get_outgoing_connections_count();
     rsp.version = PROJECT_VERSION_LONG;
     rsp.os_version = Tools::get_os_version_string();
+    rsp.node_version = PROJECT_VERSION;      
     m_payload_handler.get_stat_info(rsp.payload_info);
     return 1;
   }

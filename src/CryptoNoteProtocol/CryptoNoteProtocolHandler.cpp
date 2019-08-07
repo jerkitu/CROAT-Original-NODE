@@ -22,12 +22,18 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <System/Dispatcher.h>
 
+#include "version.h"
+
 #include "CryptoNoteCore/CryptoNoteBasicImpl.h"
 #include "CryptoNoteCore/CryptoNoteFormatUtils.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/Currency.h"
 #include "CryptoNoteCore/VerificationContext.h"
 #include "P2p/LevinProtocol.h"
+
+#include <System/Ipv4Resolver.h>
+#include <System/Ipv4Address.h>
+
 
 using namespace Logging;
 using namespace Common;
@@ -164,8 +170,47 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
       context.m_state = CryptoNoteConnectionContext::state_normal;
     }
   } else {
-    int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(get_current_blockchain_height());
+      //Check for latest Daemon version
+      COMMAND_HANDSHAKE::response response;
+    
+      std::string remote_version = boost::replace_all_copy(response.node_data.node_version, ".", "");
+      std::stringstream ss;
+      ss << PROJECT_VERSION;
+      std::string lvs;
+      ss >> lvs;
+      
+      //logger(Logging::DEBUGGING, Logging::BRIGHT_BLUE) << "INCOMMING NODE CONNECTION...";            
 
+      auto local_version = boost::replace_all_copy(lvs, ".", "");
+      auto remote_ip = Common::ipAddressToString(context.m_remote_ip);
+      
+      // Check if is trusted node to skip version check
+      int64_t version_errors = 0; 
+      
+      if (std::find(std::begin(CryptoNote::TRUSTED_NODES), std::end(CryptoNote::TRUSTED_NODES), Common::ipAddressToString(context.m_remote_ip)) != std::end(CryptoNote::TRUSTED_NODES))
+      {
+      logger(Logging::INFO, Logging::BRIGHT_BLUE) << "TRUSTED NODE DETECTED!!! [" << Common::ipAddressToString(context.m_remote_ip) << "] - Skip version check!!";      
+        version_errors = 0;  
+      } 
+
+        // Else Continue checking versions
+        else {
+            if(local_version == remote_version) {
+                logger(Logging::DEBUGGING, GREEN) << "GREAT!! Peer " << remote_ip << " are using latest version!! (" << remote_version << ")";
+                version_errors = 0;                
+            }
+            else 
+            {
+                logger(INFO, Logging::BRIGHT_RED) << "Daemon version on remote node " << remote_ip << " is not up to date! ( " << remote_version << " ) Closing connection...";
+                version_errors = 1;            
+                return false;
+            }
+        }
+
+    int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(get_current_blockchain_height());
+    
+    if (version_errors == 0)
+    {
     logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_YELLOW) << context <<
       "Sync data returned unknown top block: " << get_current_blockchain_height() << " -> " << hshd.current_height
       << " [" << std::abs(diff) << " blocks (" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days) "
@@ -175,10 +220,15 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     //let the socket to send response to handshake, but request callback, to let send request data after response
     logger(Logging::TRACE) << context << "requesting synchronization";
 	
-	//if we are more than 15000 blocks (about 10 days) behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
-	//download up to date copy of the blockchain if needed
-	if (diff >= 15000) {
-      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Remote node height too many days ahead of this node height, either it is in another blockchain or you need to download an updated copy of the blockchain";
+    }
+    
+    // Continue 
+    
+    //Check height difference
+	//if we are more than "CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF" blocks behind the remote node, we close the connection with the node to prevent sync with a bad blockchain
+    
+	if ((diff >= CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF) && (CryptoNote::parameters::MAX_BLOCKCHAIN_DIFF != 0)) {
+      logger(Logging::ERROR, Logging::BRIGHT_RED) << context << "Your local Blockchain is too OLD!. You need to download an updated copy of the Blockchain! Go to http://blockchain.croat.community to download LAST updated Blockchain!";
       context.m_state = CryptoNoteConnectionContext::state_shutdown;
       return false;
     }

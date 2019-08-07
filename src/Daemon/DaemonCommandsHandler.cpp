@@ -57,8 +57,20 @@ DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::core& core, CryptoNote:
 std::string DaemonCommandsHandler::get_commands_str()
 {
   std::stringstream ss;
-  ss << CryptoNote::CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG << ENDL;
-  ss << "Commands: " << ENDL;
+  ss << "CROAT Daemon v" << PROJECT_VERSION_LONG << ENDL;
+  ss <<
+  "                                                \n"
+  "################################################\n"  
+  "#                                              #\n"    
+  "#                CROAT DAEMON                  #\n"
+  "#                                              #\n"    
+  "#     Daemon developed by CROAT Community!     #\n"
+  "#       .-( https://CROAT.community )-.        #\n"    
+  "#                                              #\n"  
+  "################################################\n"    
+  "                                                \n" << ENDL;
+  ss << "You can use this commands: " << ENDL;
+  ss << "\n" << ENDL; 
   std::string usage = m_consoleHandler.getUsage();
   boost::replace_all(usage, "\n", "\n  ");
   usage.insert(0, "  ");
