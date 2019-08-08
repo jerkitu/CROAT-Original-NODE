@@ -39,7 +39,6 @@
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "P2p/NetNode.h"
 #include "P2p/NetNodeConfig.h"
-#include "Rpc/RpcServer.h"
 #include "Rpc/RpcServerConfig.h"
 #include "version.h"
 
@@ -472,7 +471,7 @@ int main(int argc, char* argv[])
     //create objects and link them
     CryptoNote::CurrencyBuilder currencyBuilder(logManager);
     currencyBuilder.cryptonoteName(command_line::get_arg(vm, arg_CRYPTONOTE_NAME));
-  currencyBuilder.mandatoryTransaction(command_line::get_arg(vm, arg_MANDATORY_TRANSACTION));
+    currencyBuilder.mandatoryTransaction(command_line::get_arg(vm, arg_MANDATORY_TRANSACTION));
     currencyBuilder.genesisCoinbaseTxHex(command_line::get_arg(vm, arg_GENESIS_COINBASE_TX_HEX));
     currencyBuilder.publicAddressBase58Prefix(command_line::get_arg(vm, arg_CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX));
     currencyBuilder.moneySupply(command_line::get_arg(vm, arg_MONEY_SUPPLY));
@@ -517,7 +516,7 @@ int main(int argc, char* argv[])
       return 1;
     }
     CryptoNote::Currency currency = currencyBuilder.currency();
-CryptoNote::core ccore(currency, nullptr, logManager, command_line::get_arg(vm, arg_enable_blockchain_indexes));
+    CryptoNote::core ccore(currency, nullptr, logManager, command_line::get_arg(vm, arg_enable_blockchain_indexes));
 
     CryptoNote::Checkpoints checkpoints(logManager);
 std::vector<CryptoNote::CheckpointData> checkpoint_input;
@@ -583,7 +582,7 @@ for (const auto& cp : checkpoint_input) {
 
     cprotocol.set_p2p_endpoint(&p2psrv);
     ccore.set_cryptonote_protocol(&cprotocol);
-    DaemonCommandsHandler dch(ccore, p2psrv, logManager);
+    DaemonCommandsHandler dch(ccore, p2psrv, logManager, cprotocol, &rpcServer);
 
     // initialize objects
     logger(INFO) << "Initializing p2p server...";

@@ -110,6 +110,10 @@ public:
   virtual bool getPoolTransactionsByTimestamp(uint64_t timestampBegin, uint64_t timestampEnd, uint32_t transactionsNumberLimit, std::vector<Transaction>& transactions, uint64_t& transactionsNumberWithinTimestamps) = 0;
   virtual bool getTransactionsByPaymentId(const Crypto::Hash& paymentId, std::vector<Transaction>& transactions) = 0;
 
+  virtual uint32_t get_current_blockchain_height() = 0;
+  virtual uint8_t getBlockMajorVersionForHeight(uint32_t height) = 0;
+  virtual uint8_t getCurrentBlockMajorVersion() = 0;
+
   virtual std::unique_ptr<IBlock> getBlock(const Crypto::Hash& blocksId) = 0;
   virtual bool handleIncomingTransaction(const Transaction& tx, const Crypto::Hash& txHash, size_t blobSize, tx_verification_context& tvc, bool keptByBlock) = 0;
   virtual std::error_code executeLocked(const std::function<std::error_code()>& func) = 0;

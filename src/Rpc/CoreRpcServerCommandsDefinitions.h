@@ -46,6 +46,7 @@ struct COMMAND_RPC_GET_HEIGHT {
 
   struct response {
     uint64_t height;
+    uint32_t network_height;    
     std::string status;
 
     void serialize(ISerializer &s) {
@@ -270,6 +271,8 @@ struct COMMAND_RPC_GET_INFO {
     std::string status;
     std::string version;    
     uint64_t height;
+    uint32_t network_height;
+    uint32_t hashrate; 
     uint64_t difficulty;
     uint64_t tx_count;
     uint64_t tx_pool_size;
@@ -281,11 +284,16 @@ struct COMMAND_RPC_GET_INFO {
     uint64_t grey_peerlist_size;
     uint32_t last_known_block_index;
 	std::string fee_address;
+    uint64_t start_time;
+    bool synced;
+    bool testnet;  
 
     void serialize(ISerializer &s) {
       KV_MEMBER(status)
       KV_MEMBER(version)      
       KV_MEMBER(height)
+      KV_MEMBER(network_height)
+      KV_MEMBER(hashrate)       
       KV_MEMBER(difficulty)
       KV_MEMBER(tx_count)
       KV_MEMBER(tx_pool_size)
@@ -297,6 +305,10 @@ struct COMMAND_RPC_GET_INFO {
       KV_MEMBER(grey_peerlist_size)
       KV_MEMBER(last_known_block_index)
   	  KV_MEMBER(fee_address)
+      KV_MEMBER(start_time)
+      KV_MEMBER(synced)
+      KV_MEMBER(testnet) 
+
     }
   };
 };
