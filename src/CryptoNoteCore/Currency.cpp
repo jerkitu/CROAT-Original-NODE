@@ -73,7 +73,8 @@ bool Currency::init() {
 
   if (isTestnet()) {
     m_upgradeHeightV2 = 0;
-    m_upgradeHeightV3 = static_cast<uint32_t>(-1);
+    m_upgradeHeightV3 = 10;
+    m_upgradeHeightV4 = 20;    
     m_blocksFileName = "testnet_" + m_blocksFileName;
     m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
     m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
@@ -133,6 +134,8 @@ uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
     return m_upgradeHeightV2;
   } else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
     return m_upgradeHeightV3;
+  } else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
+		return m_upgradeHeightV4;
   } else {
     return static_cast<uint32_t>(-1);
   }
@@ -402,7 +405,7 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
   return Common::fromString(strAmount, amount);
 }
 
-difficulty_type Currency::nextDifficulty(std::vector<uint64_t> timestamps,
+difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
   std::vector<difficulty_type> cumulativeDifficulties) const {
   assert(m_difficultyWindow >= 2);
 
@@ -449,7 +452,7 @@ difficulty_type Currency::nextDifficulty(std::vector<uint64_t> timestamps,
 
 bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
   Crypto::Hash& proofOfWork) const {
-  if (BLOCK_MAJOR_VERSION_1 != block.majorVersion) {
+  if (BLOCK_MAJOR_VERSION_2 == block.majorVersion || BLOCK_MAJOR_VERSION_3 == block.majorVersion) {  
     return false;
   }
 
@@ -504,6 +507,7 @@ bool Currency::checkProofOfWorkV2(Crypto::cn_context& context, const Block& bloc
 bool Currency::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic, Crypto::Hash& proofOfWork) const {
   switch (block.majorVersion) {
   case BLOCK_MAJOR_VERSION_1:
+  case BLOCK_MAJOR_VERSION_4:  
     return checkProofOfWorkV1(context, block, currentDiffic, proofOfWork);
 
   case BLOCK_MAJOR_VERSION_2:
@@ -551,15 +555,15 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
 
   moneySupply(parameters::MONEY_SUPPLY);
   emissionSpeedFactor(parameters::EMISSION_SPEED_FACTOR);
-genesisBlockReward(parameters::GENESIS_BLOCK_REWARD);
-cryptonoteCoinVersion(parameters::CRYPTONOTE_COIN_VERSION);
+  genesisBlockReward(parameters::GENESIS_BLOCK_REWARD);
+  cryptonoteCoinVersion(parameters::CRYPTONOTE_COIN_VERSION);
 
   rewardBlocksWindow(parameters::CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-mandatoryTransaction(parameters::MANDATORY_TRANSACTION);
-killHeight(parameters::KILL_HEIGHT);
+  mandatoryTransaction(parameters::MANDATORY_TRANSACTION);
+  killHeight(parameters::KILL_HEIGHT);
   blockGrantedFullRewardZone(parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE);
   minerTxBlobReservedSize(parameters::CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE);
-maxTransactionSizeLimit(parameters::MAX_TRANSACTION_SIZE_LIMIT);
+  maxTransactionSizeLimit(parameters::MAX_TRANSACTION_SIZE_LIMIT);
 
   numberOfDecimalPlaces(parameters::CRYPTONOTE_DISPLAY_DECIMAL_POINT);
 
@@ -583,12 +587,14 @@ maxTransactionSizeLimit(parameters::MAX_TRANSACTION_SIZE_LIMIT);
   numberOfPeriodsToForgetTxDeletedFromPool(parameters::CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL);
 
 // fusion transactions fix
-fusionTxMaxSize(parameters::MAX_TRANSACTION_SIZE_LIMIT * 30 / 100);
+  fusionTxMaxSize(parameters::MAX_TRANSACTION_SIZE_LIMIT * 30 / 100);
   fusionTxMinInputCount(parameters::FUSION_TX_MIN_INPUT_COUNT);
   fusionTxMinInOutCountRatio(parameters::FUSION_TX_MIN_IN_OUT_COUNT_RATIO);
 
   upgradeHeightV2(parameters::UPGRADE_HEIGHT_V2);
   upgradeHeightV3(parameters::UPGRADE_HEIGHT_V3);
+  upgradeHeightV4(parameters::UPGRADE_HEIGHT_V4); 
+  
   upgradeVotingThreshold(parameters::UPGRADE_VOTING_THRESHOLD);
   upgradeVotingWindow(parameters::UPGRADE_VOTING_WINDOW);
   upgradeWindow(parameters::UPGRADE_WINDOW);
