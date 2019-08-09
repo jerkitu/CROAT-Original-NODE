@@ -133,19 +133,19 @@ const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          //
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
 const char* const SEED_NODES[] = {
-  "nodes.croatcoin.info:46347",           // CROATCoin.info Random Nodes
-  "173.249.32.180:46347",                 // Node-01 de CROAT Pirineus
-  "80.241.213.210:46347",                 // Node-02 de CROAT Pirineus
-  "84.76.166.182:46347",                  // Node de @JeRKiTu
-  "199.247.29.17:46347",                  // Node de POOL.CAT 
-  "173.199.71.78:46347",                  // Node-01 CROAT.communitiy
-  "104.238.167.37:46347",                 // Node-02 CROAT.communitiy
+  "nodes.croatcoin.info:46347",         // CROATCoin.info Random Nodes
+  "173.249.32.180:46347",               // Node-01 de CROAT Pirineus
+  "80.241.213.210:46347",               // Node-02 de CROAT Pirineus
+  "84.76.166.182:46347",                // Node de @JeRKiTu
+  "199.247.29.17:46347",                // Node de POOL.CAT 
+  "173.199.71.78:46347",                // Node-01 CROAT.communitiy
+  "104.238.167.37:46347",               // Node-02 CROAT.communitiy
 };
 
 const char* const TRUSTED_NODES[] = {
   "173.249.32.180",                 // Node-01 de CROAT Pirineus
   "80.241.213.210",                 // Node-02 de CROAT Pirineus
-  "84.76.166.182",                  // Node del @JeRKiTu
+  "84.76.166.182",                  // Node de @JeRKiTu
   "199.247.29.17",                  // Node de POOL.CAT 
   "173.199.71.78",                  // Node-01 CROAT.communitiy
   "104.238.167.37",                 // Node-02 CROAT.communitiy
@@ -305,6 +305,30 @@ const std::initializer_list<CheckpointData> CHECKPOINTS = {
   {761000, "8dafd6885b77af45affe4794b42610a88ce678568cc401acd40fd75a893aad47"},
   {761500, "71d7bab6128fb536719191265f02e1d4a3d03b83d5f58d8e19c95457cef0513e"},
   {761970, "4f82516aebbd0aed5264888081ca53f55483382bd3a69945cd3c058780f8a39b"},
+  {770000, "19f0c69c68d06e89318e11220e3c30b31c6423d0db03fdee752bb5ea0dd5d565"},
+  {780000, "cf9fea8b67a3d7e30176efebc454660c45077a9d591dab8e99a682bdbc41b38f"},
+  {790000, "af65bf9289557b75baf35e40e4a5ca760597ecd3dd1b59379bf709d57b02102b"},
+  {800000, "730d01d22dd88d87518323f96973c5af486ab2dc1f32f98da7f4ce8d80abe223"},
+  {810000, "d0f4fdeeb0f732d93879b43b117dae2606d0910624c1a40e2c8473e0548fd52d"},
+  {820000, "39e7e35c09a84bc85416e981b4564d17aec2e410d80d436eb194b4f5c6624efd"},
+  {830000, "5570d83ebc0b9799ebe906fa8879127889a8106fd13728af3f549e9e14ecdcae"},
+  {840000, "a2339f3db5f213ba7b7e61299b132d7dd9595a9bd0c03685b071f351b8e3f47f"},
+  {850000, "83f3d995ade0ef80c54656d0605a3636748490d4825ee0075c4af581cfa8c8a8"},
+  {860000, "b4b0e40143258950f57ac7d4b988444386f65a4cd0f850798f12e44b49ad8bb4"},
+  {870000, "c90a39b8ec24508242f42467fd9ac922c1ad5b0cdd27cbd0fe970e65893b0ca7"},
+  {880000, "4706f97f105fde6b1a61118f37d0abb0399ee5b08ad87a7acf311d328fcdd114"},
+  {890000, "926a9d201a685194ae0f2e05c7d7a89120563f8b0056827219bfb27ce561e4d1"},
+  {900000, "0ad9b7a653b0c1a5ee5d99d4f12f4738895ae89d67794af3d78265deb172b767"},
+  {910000, "4b3646bc0c75838d0c6da456160e293aa1cad5f4663d0517e3de0ffda9187380"},
+  {920000, "fc911ddc5deaa6f5076a14e596372670a5db94cd2186b543a38552b9cee9090a"},
+  {930000, "2828cfa572dbddd16bc4707417553ad7473607d2bb9753a04318f0534cea6357"},
+  {940000, "6024971b226aaabfc96dbec77b6e7a022a5781d3a811d1658d5bccfa39c145c1"},
+  {950000, "6299d72f406c9142b7218f93c247d8625da9de22be5511f8feac91707c3414fa"},
+  {960000, "87437c14224d4db29369353e24abd814676ee7cf1c873bd78d228c6abdabc848"},
+  {970000, "f837cc8feb35a34f3698001fccaaa81a900bc42ead9e9fcb89671d2f23dc1c3c"},
+  {980000, "06279882e98e2868e2daed39c727c5c3bb17db0580840d440c0fa39ddcb67790"},
+  {990000, "f19119ccde2c048ddf4b9286bbe6aabbd8666840c0fbdbbfd88be7720dce2be0"},
+  {1000000, "f35867894fff920c27079c1030a42c8e8e43938e5e0674a9e47b719e7a972553"},  
 };
 } // CryptoNote
 
