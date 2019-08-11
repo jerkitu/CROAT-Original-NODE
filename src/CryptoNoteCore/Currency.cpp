@@ -1,4 +1,6 @@
 // Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2016-2018  zawy12
+// Copyright (c) 2016-2018, The Karbowanec developers
 //
 // This file is part of Bytecoin.
 //
@@ -18,6 +20,7 @@
 #include "Currency.h"
 #include <cctype>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <boost/lexical_cast.hpp>
 #include "../Common/Base58.h"
 #include "../Common/int-util.h"
@@ -72,29 +75,22 @@ bool Currency::init() {
   }
 
   if (isTestnet()) {
-    m_upgradeHeightV2 = 0;
-    m_upgradeHeightV3 = 10;
-    m_upgradeHeightV4 = 20;    
+    m_upgradeHeightV2 = 1;
+    m_upgradeHeightV3 = 2;
+    m_upgradeHeightV4 = 5;
     m_blocksFileName = "testnet_" + m_blocksFileName;
     m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
     m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
     m_txPoolFileName = "testnet_" + m_txPoolFileName;
-    m_blockchinIndicesFileName = "testnet_" + m_blockchinIndicesFileName;
+    m_blockchainIndicesFileName = "testnet_" + m_blockchainIndicesFileName;
   }
-
   return true;
 }
 
 bool Currency::generateGenesisBlock() {
   m_genesisBlock = boost::value_initialized<Block>();
 
-  //account_public_address ac = boost::value_initialized<AccountPublicAddress>();
-  //std::vector<size_t> sz;
-  //constructMinerTx(0, 0, 0, 0, 0, ac, m_genesisBlock.baseTransaction); // zero fee in genesis
-  //BinaryArray txb = toBinaryArray(m_genesisBlock.baseTransaction);
-  //std::string hex_tx_represent = Common::toHex(txb);
-
-  // Hard code coinbase tx in genesis block, because through generating tx use random, but genesis should be always the same
+  // Hard code coinbase tx in genesis block, because "tru" generating tx use random, but genesis should be always the same
   std::string genesisCoinbaseTxHex = m_genesisCoinbaseTxHex;
   BinaryArray minerTxBlob;
 
@@ -122,21 +118,25 @@ bool Currency::generateGenesisBlock() {
 size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
   if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
     return m_blockGrantedFullRewardZone;
-  } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
+  } 
+  else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
     return m_blockGrantedFullRewardZoneV2;
-  } else {
+  } 
+  else {
     return m_blockGrantedFullRewardZoneV1;
   }
 }
-
 uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
   if (majorVersion == BLOCK_MAJOR_VERSION_2) {
-    return m_upgradeHeightV2;
-  } else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
-    return m_upgradeHeightV3;
-  } else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
+        return m_upgradeHeightV2;
+  } 
+  else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
+        return m_upgradeHeightV3;
+  } 
+  else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
 		return m_upgradeHeightV4;
-  } else {
+  } 
+  else {
     return static_cast<uint32_t>(-1);
   }
 }
@@ -146,6 +146,7 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
   assert(alreadyGeneratedCoins <= m_moneySupply);
   assert(m_emissionSpeedFactor > 0 && m_emissionSpeedFactor <= 8 * sizeof(uint64_t));
 
+  // Tail emission
   uint64_t baseReward = (m_moneySupply - alreadyGeneratedCoins) >> m_emissionSpeedFactor;
   if (alreadyGeneratedCoins == 0 && m_genesisBlockReward != 0) {
     baseReward = m_genesisBlockReward;
@@ -274,7 +275,7 @@ bool Currency::isFusionTransaction(const std::vector<uint64_t>& inputsAmounts, c
   }
 
   uint64_t inputAmount = 0;
-  for (auto amount: inputsAmounts) {
+  for (auto amount : inputsAmounts) {
     if (amount < defaultDustThreshold()) {
       return false;
     }
@@ -386,7 +387,8 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
       return false;
     }
     strAmount.erase(pointIndex, 1);
-  } else {
+  } 
+  else {
     fractionSize = 0;
   }
 
@@ -405,114 +407,284 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
   return Common::fromString(strAmount, amount);
 }
 
+/* nextDifficulty */
+
 difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
-  std::vector<difficulty_type> cumulativeDifficulties) const {
-  assert(m_difficultyWindow >= 2);
-
-  if (timestamps.size() > m_difficultyWindow) {
-    timestamps.resize(m_difficultyWindow);
-    cumulativeDifficulties.resize(m_difficultyWindow);
-  }
-
-  size_t length = timestamps.size();
-  assert(length == cumulativeDifficulties.size());
-  assert(length <= m_difficultyWindow);
-  if (length <= 1) {
-    return 1;
-  }
-
-  sort(timestamps.begin(), timestamps.end());
-
-  size_t cutBegin, cutEnd;
-  assert(2 * m_difficultyCut <= m_difficultyWindow - 2);
-  if (length <= m_difficultyWindow - 2 * m_difficultyCut) {
-    cutBegin = 0;
-    cutEnd = length;
-  } else {
-    cutBegin = (length - (m_difficultyWindow - 2 * m_difficultyCut) + 1) / 2;
-    cutEnd = cutBegin + (m_difficultyWindow - 2 * m_difficultyCut);
-  }
-  assert(/*cut_begin >= 0 &&*/ cutBegin + 2 <= cutEnd && cutEnd <= length);
-  uint64_t timeSpan = timestamps[cutEnd - 1] - timestamps[cutBegin];
-  if (timeSpan == 0) {
-    timeSpan = 1;
-  }
-
-  difficulty_type totalWork = cumulativeDifficulties[cutEnd - 1] - cumulativeDifficulties[cutBegin];
-  assert(totalWork > 0);
-
-  uint64_t low, high;
-  low = mul128(totalWork, m_difficultyTarget, &high);
-  if (high != 0 || low + timeSpan - 1 < low) {
-    return 0;
-  }
-
-  return (low + timeSpan - 1) / timeSpan;
+	std::vector<difficulty_type> cumulativeDifficulties) const {
+	if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+		return nextDifficultyV1(timestamps, cumulativeDifficulties);
+	}
+	else if (blockMajorVersion == BLOCK_MAJOR_VERSION_3) {
+		return nextDifficultyV1(timestamps, cumulativeDifficulties);
+	}
+	else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
+		return nextDifficultyV1(timestamps, cumulativeDifficulties);
+	}
+	else {
+		return nextDifficultyV1(timestamps, cumulativeDifficulties);
+	}
 }
+
+/* nextDifficultyV1 */
+
+difficulty_type Currency::nextDifficultyV1(std::vector<uint64_t> timestamps,
+	std::vector<difficulty_type> cumulativeDifficulties) const {
+	assert(m_difficultyWindow >= 2);
+    if (timestamps.size() > m_difficultyWindow) {
+        timestamps.resize(m_difficultyWindow);
+        cumulativeDifficulties.resize(m_difficultyWindow);
+    }
+    size_t length = timestamps.size();
+    assert(length == cumulativeDifficulties.size());
+    assert(length <= m_difficultyWindow);
+    if (length <= 1) {
+        return 1;
+    }
+    sort(timestamps.begin(), timestamps.end());
+    size_t cutBegin, cutEnd;
+    assert(2 * m_difficultyCut <= m_difficultyWindow - 2);
+    if (length <= m_difficultyWindow - 2 * m_difficultyCut) {
+        cutBegin = 0;
+        cutEnd = length;
+    } 
+    else {
+        cutBegin = (length - (m_difficultyWindow - 2 * m_difficultyCut) + 1) / 2;
+        cutEnd = cutBegin + (m_difficultyWindow - 2 * m_difficultyCut);
+    }
+    assert(/*cut_begin >= 0 &&*/ cutBegin + 2 <= cutEnd && cutEnd <= length);
+    uint64_t timeSpan = timestamps[cutEnd - 1] - timestamps[cutBegin];
+    if (timeSpan == 0) {
+        timeSpan = 1;
+    }
+    difficulty_type totalWork = cumulativeDifficulties[cutEnd - 1] - cumulativeDifficulties[cutBegin];
+    assert(totalWork > 0);
+    uint64_t low, high;
+    low = mul128(totalWork, m_difficultyTarget, &high);
+    if (high != 0 || low + timeSpan - 1 < low) {
+        return 0;
+    }
+    return (low + timeSpan - 1) / timeSpan;
+}
+
+/* nextDifficultyV2 - ZAWY */
+
+difficulty_type Currency::nextDifficultyV2(std::vector<uint64_t> timestamps,
+	std::vector<difficulty_type> cumulativeDifficulties) const {
+	// Difficulty calculation v. 2
+	// based on Zawy difficulty algorithm v1.0
+	// next Diff = Avg past N Diff * TargetInterval / Avg past N solve times
+	// as described at https://github.com/monero-project/research-lab/issues/3
+	// Window time span and total difficulty is taken instead of average as suggested by Nuclear_chaos
+
+	size_t m_difficultyWindow_2 = CryptoNote::parameters::DIFFICULTY_WINDOW_V2;
+	assert(m_difficultyWindow_2 >= 2);
+		if (timestamps.size() > m_difficultyWindow_2) {
+		timestamps.resize(m_difficultyWindow_2);
+		cumulativeDifficulties.resize(m_difficultyWindow_2);
+	}
+		size_t length = timestamps.size();
+	assert(length == cumulativeDifficulties.size());
+	assert(length <= m_difficultyWindow_2);
+	if (length <= 1) {
+		return 1;
+	}
+		sort(timestamps.begin(), timestamps.end());
+		uint64_t timeSpan = timestamps.back() - timestamps.front();
+	if (timeSpan == 0) {
+		timeSpan = 1;
+	}
+		difficulty_type totalWork = cumulativeDifficulties.back() - cumulativeDifficulties.front();
+	assert(totalWork > 0);
+		// uint64_t nextDiffZ = totalWork * m_difficultyTarget / timeSpan; 
+		uint64_t low, high;
+	low = mul128(totalWork, m_difficultyTarget, &high);
+	// blockchain error "Difficulty overhead" if this function returns zero
+	if (high != 0) {
+		return 0;
+	}
+
+	uint64_t nextDiffZ = low / timeSpan;
+		// minimum limit
+	if (!isTestnet() && nextDiffZ < 100000) {
+		nextDiffZ = 100000;
+	}
+		return nextDiffZ;
+}
+
+/* nextDifficultyV3 - LWMA */
+
+difficulty_type Currency::nextDifficultyV3(std::vector<uint64_t> timestamps,
+    std::vector<difficulty_type> cumulativeDifficulties) const {
+	// LWMA difficulty algorithm
+	// Copyright (c) 2017-2018 Zawy
+	// MIT license http://www.opensource.org/licenses/mit-license.php.
+	// This is an improved version of Tom Harding's (Deger8) "WT-144"  
+	// Karbowanec, Masari, Bitcoin Gold, and Bitcoin Cash have contributed.
+	// See https://github.com/zawy12/difficulty-algorithms/issues/1 for other algos.
+	// Do not use "if solvetime < 0 then solvetime = 1" which allows a catastrophic exploit.
+	// T= target_solvetime;
+	// N = int(45 * (600 / T) ^ 0.3));
+	const int64_t T = static_cast<int64_t>(m_difficultyTarget);
+	const size_t N = CryptoNote::parameters::DIFFICULTY_WINDOW_V3 - 1;
+	if (timestamps.size() > N + 1) {
+		timestamps.resize(N + 1);
+		cumulativeDifficulties.resize(N + 1);
+	}
+	size_t n = timestamps.size();
+	assert(n == cumulativeDifficulties.size());
+	assert(n <= CryptoNote::parameters::DIFFICULTY_WINDOW_V3);
+	if (n <= 1)
+	return 1;
+	// To get an average solvetime to within +/- ~0.1%, use an adjustment factor.
+	const double_t adjust = 0.998;
+	// The divisor k normalizes LWMA.
+	const double_t k = N * (N + 1) / 2;
+	double_t LWMA(0), sum_inverse_D(0), harmonic_mean_D(0), nextDifficulty(0);
+	int64_t solveTime(0);
+	uint64_t difficulty(0), next_difficulty(0);
+	// Loop through N most recent blocks.
+    for (int64_t i = 1; i <= N; i++) {
+		solveTime = static_cast<int64_t>(timestamps[i]) - static_cast<int64_t>(timestamps[i - 1]);
+		solveTime = std::min<int64_t>((T * 7), std::max<int64_t>(solveTime, (-6 * T)));
+		difficulty = cumulativeDifficulties[i] - cumulativeDifficulties[i - 1];
+		LWMA += solveTime * i / k;
+		sum_inverse_D += 1 / static_cast<double_t>(difficulty);
+	}
+	// Keep LWMA sane in case something unforeseen occurs.
+	if (static_cast<int64_t>(boost::math::round(LWMA)) < T / 20)
+	LWMA = static_cast<double_t>(T / 20);
+	harmonic_mean_D = N / sum_inverse_D * adjust;
+	nextDifficulty = harmonic_mean_D * T / LWMA;
+	next_difficulty = static_cast<uint64_t>(nextDifficulty);
+	// minimum limit
+	if (!isTestnet() && next_difficulty < 100000) {
+		next_difficulty = 100000;
+	}
+	return next_difficulty;
+}
+
+/* nextDifficultyV4 - LWMA */
+
+difficulty_type Currency::nextDifficultyV4(std::vector<uint64_t> timestamps,
+	std::vector<difficulty_type> cumulativeDifficulties) const {
+	// LWMA difficulty algorithm
+	// Copyright (c) 2017-2018 Zawy
+	// MIT license http://www.opensource.org/licenses/mit-license.php.
+	// This is an improved version of Tom Harding's (Deger8) "WT-144"  
+	// Karbowanec, Masari, Bitcoin Gold, and Bitcoin Cash have contributed.
+	// See https://github.com/zawy12/difficulty-algorithms/issues/1 for other algos.
+	// Do not use "if solvetime < 0 then solvetime = 1" which allows a catastrophic exploit.
+	// T= target_solvetime;
+	// N = int(45 * (600 / T) ^ 0.3));
+
+	const int64_t T = static_cast<int64_t>(m_difficultyTarget);
+	const size_t N = CryptoNote::parameters::DIFFICULTY_WINDOW_V4 - 1;
+
+	if (timestamps.size() > N + 1) {
+		timestamps.resize(N + 1);
+		cumulativeDifficulties.resize(N + 1);
+	}
+	size_t n = timestamps.size();
+	assert(n == cumulativeDifficulties.size());
+	assert(n <= CryptoNote::parameters::DIFFICULTY_WINDOW_V4);
+	if (n <= 1)
+		return 1;
+	// To get an average solvetime to within +/- ~0.1%, use an adjustment factor.
+	const double_t adjust = 0.998;
+	// The divisor k normalizes LWMA.
+	const double_t k = N * (N + 1) / 2;
+	double_t LWMA(0), sum_inverse_D(0), harmonic_mean_D(0), nextDifficulty(0);
+	int64_t solveTime(0);
+	uint64_t difficulty(0), next_difficulty(0);
+
+	// Loop through N most recent blocks.
+	for (int64_t i = 1; i <= N; i++) {
+		solveTime = static_cast<int64_t>(timestamps[i]) - static_cast<int64_t>(timestamps[i - 1]);
+		solveTime = std::min<int64_t>((T * 7), std::max<int64_t>(solveTime, (-6 * T)));
+		difficulty = cumulativeDifficulties[i] - cumulativeDifficulties[i - 1];
+		LWMA += solveTime * i / k;
+		sum_inverse_D += 1 / static_cast<double_t>(difficulty);
+	}
+
+	// Keep LWMA sane in case something unforeseen occurs.
+	if (static_cast<int64_t>(boost::math::round(LWMA)) < T / 20)
+	LWMA = static_cast<double_t>(T / 20);
+	harmonic_mean_D = N / sum_inverse_D * adjust;
+	nextDifficulty = harmonic_mean_D * T / LWMA;
+	next_difficulty = static_cast<uint64_t>(nextDifficulty);
+	
+	// minimum limit
+	if (!isTestnet() && next_difficulty < 100000) {
+		next_difficulty = 100000;
+	}
+	//logger(TRACE) << "Calculating next diff V4: " << next_difficulty;
+	return next_difficulty;
+}
+
+template <typename T>
+inline T clamp(T lo, T v, T hi)
+{
+	return v < lo ? lo : v > hi ? hi : v;
+}
+
+/* checkProofOfWorkV1 */
 
 bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
-  Crypto::Hash& proofOfWork) const {
-  if (BLOCK_MAJOR_VERSION_2 == block.majorVersion || BLOCK_MAJOR_VERSION_3 == block.majorVersion) {  
-    return false;
-  }
-
-  if (!get_block_longhash(context, block, proofOfWork)) {
-    return false;
-  }
-
-  return check_hash(proofOfWork, currentDiffic);
+	Crypto::Hash& proofOfWork) const {
+	if (BLOCK_MAJOR_VERSION_2 == block.majorVersion || BLOCK_MAJOR_VERSION_3 == block.majorVersion) {
+		return false;
+	}
+	if (!get_block_longhash(context, block, proofOfWork)) {
+		return false;
+	}
+	return check_hash(proofOfWork, currentDiffic);
 }
 
+/* checkProofOfWorkV2 */
+	
 bool Currency::checkProofOfWorkV2(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
-  Crypto::Hash& proofOfWork) const {
-  if (block.majorVersion < BLOCK_MAJOR_VERSION_2) {
-    return false;
-  }
-
-  if (!get_block_longhash(context, block, proofOfWork)) {
-    return false;
-  }
-
-  if (!check_hash(proofOfWork, currentDiffic)) {
-    return false;
-  }
-
-  TransactionExtraMergeMiningTag mmTag;
-  if (!getMergeMiningTagFromExtra(block.parentBlock.baseTransaction.extra, mmTag)) {
-    logger(ERROR) << "merge mining tag wasn't found in extra of the parent block miner transaction";
-    return false;
-  }
-
-  if (8 * sizeof(m_genesisBlockHash) < block.parentBlock.blockchainBranch.size()) {
-    return false;
-  }
-
-  Crypto::Hash auxBlockHeaderHash;
-  if (!get_aux_block_header_hash(block, auxBlockHeaderHash)) {
-    return false;
-  }
-
-  Crypto::Hash auxBlocksMerkleRoot;
-  Crypto::tree_hash_from_branch(block.parentBlock.blockchainBranch.data(), block.parentBlock.blockchainBranch.size(),
+Crypto::Hash& proofOfWork) const {
+    if (block.majorVersion < BLOCK_MAJOR_VERSION_2) {
+        return false;
+    }
+    if (!get_block_longhash(context, block, proofOfWork)) {
+        return false;
+    }
+    if (!check_hash(proofOfWork, currentDiffic)) {
+        return false;
+    }
+    TransactionExtraMergeMiningTag mmTag;
+    if (!getMergeMiningTagFromExtra(block.parentBlock.baseTransaction.extra, mmTag)) {
+        logger(ERROR) << "merge mining tag wasn't found in extra of the parent block miner transaction";
+        return false;
+    }
+    if (8 * sizeof(m_genesisBlockHash) < block.parentBlock.blockchainBranch.size()) {
+        return false;
+    }
+    Crypto::Hash auxBlockHeaderHash;
+    if (!get_aux_block_header_hash(block, auxBlockHeaderHash)) {
+        return false;
+    }
+    Crypto::Hash auxBlocksMerkleRoot;
+    Crypto::tree_hash_from_branch(block.parentBlock.blockchainBranch.data(), block.parentBlock.blockchainBranch.size(),
     auxBlockHeaderHash, &m_genesisBlockHash, auxBlocksMerkleRoot);
-
-  if (auxBlocksMerkleRoot != mmTag.merkleRoot) {
-    logger(ERROR, BRIGHT_YELLOW) << "Aux block hash wasn't found in merkle tree";
-    return false;
-  }
-
-  return true;
+    if (auxBlocksMerkleRoot != mmTag.merkleRoot) {
+        logger(ERROR, BRIGHT_YELLOW) << "Aux block hash wasn't found in merkle tree";
+        return false;
+    }
+    return true;
 }
+
+/* checkProofOfWork */
 
 bool Currency::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic, Crypto::Hash& proofOfWork) const {
   switch (block.majorVersion) {
-  case BLOCK_MAJOR_VERSION_1:
-  case BLOCK_MAJOR_VERSION_4:  
-    return checkProofOfWorkV1(context, block, currentDiffic, proofOfWork);
-
-  case BLOCK_MAJOR_VERSION_2:
-  case BLOCK_MAJOR_VERSION_3:
-    return checkProofOfWorkV2(context, block, currentDiffic, proofOfWork);
+    case BLOCK_MAJOR_VERSION_1:
+    case BLOCK_MAJOR_VERSION_4:  
+        return checkProofOfWorkV1(context, block, currentDiffic, proofOfWork);
+    case BLOCK_MAJOR_VERSION_2:
+    case BLOCK_MAJOR_VERSION_3:
+        return checkProofOfWorkV2(context, block, currentDiffic, proofOfWork);
   }
 
   logger(ERROR, BRIGHT_RED) << "Unknown block major version: " << block.majorVersion << "." << block.minorVersion;
@@ -594,7 +766,6 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   upgradeHeightV2(parameters::UPGRADE_HEIGHT_V2);
   upgradeHeightV3(parameters::UPGRADE_HEIGHT_V3);
   upgradeHeightV4(parameters::UPGRADE_HEIGHT_V4); 
-  
   upgradeVotingThreshold(parameters::UPGRADE_VOTING_THRESHOLD);
   upgradeVotingWindow(parameters::UPGRADE_VOTING_WINDOW);
   upgradeWindow(parameters::UPGRADE_WINDOW);
@@ -603,7 +774,7 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   blocksCacheFileName(parameters::CRYPTONOTE_BLOCKSCACHE_FILENAME);
   blockIndexesFileName(parameters::CRYPTONOTE_BLOCKINDEXES_FILENAME);
   txPoolFileName(parameters::CRYPTONOTE_POOLDATA_FILENAME);
-  blockchinIndicesFileName(parameters::CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME);
+  blockchainIndicesFileName(parameters::CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME);
 
   testnet(false);
 }
@@ -691,7 +862,7 @@ CurrencyBuilder& CurrencyBuilder::upgradeWindow(size_t val) {
     throw std::invalid_argument("val at upgradeWindow()");
   }
 
-  m_currency.m_upgradeWindow = val;
+ m_currency.m_upgradeWindow = static_cast<uint32_t>(val);
   return *this;
 }
 
